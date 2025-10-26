@@ -1,0 +1,188 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>NeuroDiagnóstico - Sistema de Avaliação Neurológica</title>
+    <link rel="stylesheet" href="style.css">
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
+</head>
+<body>
+    <div class="container">
+        <!-- Sidebar -->
+        <div class="sidebar">
+            <div class="logo">
+                <h1>NeuroDiagnóstico</h1>
+            </div>
+            <ul class="nav-links">
+                <li class="active"><a href="#"><i class="fas fa-home"></i> Dashboard</a></li>
+                <li><a href="#"><i class="fas fa-user-injured"></i> Pacientes</a></li>
+                <li><a href="#"><i class="fas fa-brain"></i> Avaliações</a></li>
+                <li><a href="#"><i class="fas fa-chart-bar"></i> Relatórios</a></li>
+                <li><a href="#"><i class="fas fa-cog"></i> Configurações</a></li>
+                <li><a href="#"><i class="fas fa-question-circle"></i> Ajuda</a></li>
+            </ul>
+        </div>
+        
+        <!-- Main Content -->
+        <div class="main-content">
+            <div class="header">
+                <h2>Dashboard do Paciente</h2>
+                <div class="user-info">
+                    <img src="https://i.pravatar.cc/150?img=12" alt="Dr. Silva">
+                    <span>Dr. Silva</span>
+                </div>
+            </div>
+            
+            <!-- Summary Cards -->
+            <div class="cards">
+                <div class="card">
+                    <div class="card-header">
+                        <div class="card-title">Pacientes Ativos</div>
+                        <div class="card-icon icon-patient">
+                            <i class="fas fa-user-injured"></i>
+                        </div>
+                    </div>
+                    <div class="card-value">42</div>
+                    <div class="card-desc">+5 este mês</div>
+                </div>
+                
+                <div class="card">
+                    <div class="card-header">
+                        <div class="card-title">Testes Realizados</div>
+                        <div class="card-icon icon-test">
+                            <i class="fas fa-brain"></i>
+                        </div>
+                    </div>
+                    <div class="card-value">128</div>
+                    <div class="card-desc">+12 esta semana</div>
+                </div>
+                
+                <div class="card">
+                    <div class="card-header">
+                        <div class="card-title">Diagnósticos</div>
+                        <div class="card-icon icon-results">
+                            <i class="fas fa-diagnoses"></i>
+                        </div>
+                    </div>
+                    <div class="card-value">24</div>
+                    <div class="card-desc">+3 novos casos</div>
+                </div>
+            </div>
+            
+            <!-- Patient Information -->
+            <div class="patient-info">
+                <div class="patient-header">
+                    <div class="patient-avatar">
+                        <i class="fas fa-user"></i>
+                    </div>
+                    <div class="patient-details">
+                        <h3>Maria Oliveira, 72 anos</h3>
+                        <p>ID: #P-00482 | Última consulta: 15/03/2023</p>
+                    </div>
+                </div>
+                
+                <<div class="info-grid">
+    <div class="info-item">
+        <div class="info-label">Data de Nascimento</div>
+        <div class="info-value" id="infoBirthDate">15/08/1951</div>
+    </div>
+    <div class="info-item">
+        <div class="info-label">Gênero</div>
+        <div class="info-value" id="infoGender">Feminino</div>
+    </div>
+    <div class="info-item">
+        <div class="info-label">Contato</div>
+        <div class="info-value" id="infoContact">(11) 98765-4321</div>
+    </div>
+    <div class="info-item">
+        <div class="info-label">Responsável</div>
+        <div class="info-value" id="infoResponsible">João Oliveira (filho)</div>
+    </div>
+    <div class="info-item">
+        <div class="info-label">Histórico Familiar</div>
+        <div class="info-value" id="infoFamilyHistory">Mãe com DA</div>
+    </div>
+    <div class="info-item">
+        <div class="info-label">Comorbidades</div>
+        <div class="info-value" id="infoComorbidities">Hipertensão, Diabetes</div>
+    </div>
+</div>
+            </div>
+            
+            <!-- Cognitive Tests -->
+            <div class="tests-section">
+                <h3 class="section-title"><i class="fas fa-brain"></i> Avaliações Cognitivas</h3>
+                <div class="tests-grid">
+                    <div class="test-card">
+                        <div class="test-name">Mini-Mental (MMSE)</div>
+                        <div class="test-status status-completed">Concluído</div>
+                        <div class="test-score">24/30</div>
+                    </div>
+                    <div class="test-card">
+                        <div class="test-name">MoCA</div>
+                        <div class="test-status status-completed">Concluído</div>
+                        <div class="test-score">18/30</div>
+                    </div>
+                    <div class="test-card">
+                        <div class="test-name">CDR</div>
+                        <div class="test-status status-completed">Concluído</div>
+                        <div class="test-score">1.0</div>
+                    </div>
+                    <div class="test-card">
+                        <div class="test-name">Teste do Relógio</div>
+                        <div class="test-status status-pending">Pendente</div>
+                        <div class="test-score">-</div>
+                    </div>
+                </div>
+            </div>
+            
+            <!-- Results Visualization -->
+            <div class="results-section">
+                <h3 class="section-title"><i class="fas fa-chart-line"></i> Progressão Cognitiva</h3>
+                <div class="chart-container">
+                    <!-- Aqui iria um gráfico de progressão -->
+                    <div style="display: flex; align-items: flex-end; height: 100%; gap: 20px; padding: 20px;">
+                        <div style="background: var(--secondary); width: 40px; height: 60%; border-radius: 5px;"></div>
+                        <div style="background: var(--secondary); width: 40px; height: 70%; border-radius: 5px;"></div>
+                        <div style="background: var(--secondary); width: 40px; height: 50%; border-radius: 5px;"></div>
+                        <div style="background: var(--secondary); width: 40px; height: 40%; border-radius: 5px;"></div>
+                        <div style="background: var(--accent); width: 40px; height: 35%; border-radius: 5px;"></div>
+                    </div>
+                </div>
+            </div>
+            
+            <!-- Risk Assessment -->
+            <div class="risk-assessment">
+                <h3 class="section-title"><i class="fas fa-exclamation-triangle"></i> Avaliação de Risco</h3>
+                <div class="risk-level">
+                    <div class="risk-indicator risk-medium">
+                        Moderado
+                    </div>
+                    <div class="risk-details">
+                        <h4>Risco de Demência: Moderado</h4>
+                        <p>Paciente apresenta declínio cognitivo significativo com pontuações abaixo do esperado para idade e escolaridade.</p>
+                    </div>
+                </div>
+                
+                <div class="recommendations">
+                    <h4>Recomendações:</h4>
+                    <ul>
+                        <li>Realizar exames de neuroimagem (RM ou TC de crânio)</li>
+                        <li>Avaliação com geriatra para manejo de comorbidades</li>
+                        <li>Iniciar acompanhamento com terapia ocupacional</li>
+                        <li>Reavaliar em 6 meses com bateria completa de testes</li>
+                        <li>Orientar família sobre segurança e adaptações no ambiente doméstico</li>
+                    </ul>
+                </div>
+                
+                <div class="action-buttons">
+                    <button class="btn btn-primary">Gerar Relatório</button>
+                    <button class="btn btn-outline">Agendar Retorno</button>
+                </div>
+            </div>
+        </div>
+    </div>
+</body>
+</html>
