@@ -424,16 +424,22 @@ const EvaluationsManager = {
         return Storage.get(Storage.KEYS.EVALUATIONS) || [];
     },
 
-    // Obter avaliação por paciente
-    getByPatient(pacienteId) {
+    // Obter avaliação por ID
+    getById(id) {
         const evaluations = this.getAll();
-        return evaluations.find(e => e.pacienteId === pacienteId);
+        return evaluations.find(e => e.id === id);
+    },
+
+    // Obter avaliação por paciente
+    getByPatient(patientId) {
+        const evaluations = this.getAll();
+        return evaluations.find(e => e.patientId === patientId);
     },
 
     // Salvar avaliação
     save(evaluation) {
         const evaluations = this.getAll();
-        const index = evaluations.findIndex(e => e.pacienteId === evaluation.pacienteId);
+        const index = evaluations.findIndex(e => e.patientId === evaluation.patientId);
 
         if (index !== -1) {
             evaluations[index] = evaluation;
