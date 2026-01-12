@@ -149,6 +149,87 @@
         </div>
     </div>
 
+    <!-- View Patient Details Modal -->
+    <div id="viewPatientModal" class="modal">
+        <div class="modal-content modal-lg">
+            <div class="modal-header">
+                <h3><i class="fas fa-user"></i> Detalhes do Paciente</h3>
+                <button class="close-btn" onclick="closeViewPatientModal()">
+                    <i class="fas fa-times"></i>
+                </button>
+            </div>
+            <div class="modal-body">
+                <div class="patient-details">
+                    <div class="details-section">
+                        <h4>Informações Pessoais</h4>
+                        <div class="details-grid">
+                            <div class="detail-item">
+                                <label>ID do Paciente:</label>
+                                <span id="detailPatientId">-</span>
+                            </div>
+                            <div class="detail-item">
+                                <label>Nome Completo:</label>
+                                <span id="detailPatientName">-</span>
+                            </div>
+                            <div class="detail-item">
+                                <label>CPF:</label>
+                                <span id="detailPatientCPF">-</span>
+                            </div>
+                            <div class="detail-item">
+                                <label>Idade:</label>
+                                <span id="detailPatientAge">-</span>
+                            </div>
+                            <div class="detail-item">
+                                <label>Data de Nascimento:</label>
+                                <span id="detailPatientBirth">-</span>
+                            </div>
+                            <div class="detail-item">
+                                <label>Status:</label>
+                                <span id="detailPatientStatus">-</span>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="details-section">
+                        <h4>Histórico Clínico</h4>
+                        <div class="details-grid">
+                            <div class="detail-item">
+                                <label>Última Consulta:</label>
+                                <span id="detailLastConsultation">-</span>
+                            </div>
+                            <div class="detail-item">
+                                <label>Total de Avaliações:</label>
+                                <span id="detailEvaluationsCount">0</span>
+                            </div>
+                            <div class="detail-item">
+                                <label>Total de Exames:</label>
+                                <span id="detailExamsCount">0</span>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="details-section">
+                        <h4>Observações</h4>
+                        <div class="observation-box" id="detailObservations">-</div>
+                    </div>
+
+                    <div class="details-section">
+                        <h4>Avaliações Recentes</h4>
+                        <div id="recentEvaluations" class="evaluations-list">
+                            <p style="text-align: center; color: var(--text-secondary);">Nenhuma avaliação registrada</p>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            <div class="modal-footer">
+                <button class="btn btn-outline" onclick="closeViewPatientModal()">Fechar</button>
+                <button class="btn btn-primary" onclick="editPatient(currentViewingPatientId)">
+                    <i class="fas fa-edit"></i> Editar Paciente
+                </button>
+            </div>
+        </div>
+    </div>
+
     <!-- Add Patient Modal -->
     <div id="addPatientModal" class="modal">
         <div class="modal-content">
@@ -334,12 +415,79 @@
             });
         }
 
+        // Variável para armazenar o ID do paciente sendo visualizado
+        let currentViewingPatientId = null;
+
         // Funções de ação
         function viewPatient(id) {
             const patient = PatientsManager.getById(id);
-            if (patient) {
-                alert(`Paciente: ${patient.nome}\nCPF: ${patient.cpf}\nIdade: ${patient.idade} anos\nStatus: ${patient.status}\n\nVisualização completa em desenvolvimento`);
+            if (!patient) {
+                alert('Paciente não encontrado');
+                return;
             }
+
+            currentViewingPatientId = id;
+
+            // Preencher informações pessoais
+            document.getElementById('detailPatientId').textContent = patient.id;
+            document.getElementById('detailPatientName').textContent = patient.nome;
+            document.getElementById('detailPatientCPF').textContent = patient.cpf;
+            document.getElementById('detailPatientAge').textContent = patient.idade + ' anos';
+            document.getElementById('detailPatientBirth').textContent = patient.dataNascimento || '-';
+            
+            const statusBadge = {
+                'Em Avaliação': 'badge-warning',
+                'Concluído': 'badge-success',
+                'Agendado': 'badge-info',
+                'Pendente': 'badge-danger'
+            }[patient.status] || 'badge-info';
+            
+            document.getElementById('detailPatientStatus').innerHTML = 
+                `<span class="badge ${statusBadge}">${patient.status}</span>`;
+            
+            document.getElementById('detailLastConsultation').textContent = patient.ultimaConsulta || '-';
+            
+            // Buscar avaliações e exames
+            const evaluations = EvaluationsManager.getAll().filter(e => e.patientId === id);
+            const exams = ExamsManager.getAll().filter(e => e.patientId === id);
+            
+            document.getElementById('detailEvaluationsCount').textContent = evaluations.length;
+            document.getElementById('detailExamsCount').textContent = exams.length;
+            
+            // Observações
+            const obsText = patient.observacoes || 'Nenhuma observação registrada';
+            document.getElementById('detailObservations').textContent = obsText;
+            
+            // Avaliações recentes
+            const recentsContainer = document.getElementById('recentEvaluations');
+            if (evaluations.length === 0) {
+                recentsContainer.innerHTML = '<p style="text-align: center; color: var(--text-secondary);">Nenhuma avaliação registrada</p>';
+            } else {
+                recentsContainer.innerHTML = evaluations
+                    .sort((a, b) => new Date(b.date) - new Date(a.date))
+                    .slice(0, 5)
+                    .map(eval => `
+                        <div class="evaluation-item">
+                            <div class="eval-header">
+                                <strong>${eval.type ? eval.type.charAt(0).toUpperCase() + eval.type.slice(1) : 'Avaliação'}</strong>
+                                <span class="eval-date">${eval.date}</span>
+                            </div>
+                            <div class="eval-status">
+                                <span class="badge badge-${eval.status === 'Concluída' ? 'success' : 'warning'}">${eval.status}</span>
+                                ${eval.aiAssisted ? '<span class="badge badge-info" style="margin-left: 8px;">IA Assistida</span>' : ''}
+                            </div>
+                        </div>
+                    `)
+                    .join('');
+            }
+            
+            // Abrir modal
+            document.getElementById('viewPatientModal').style.display = 'flex';
+        }
+
+        function closeViewPatientModal() {
+            document.getElementById('viewPatientModal').style.display = 'none';
+            currentViewingPatientId = null;
         }
 
         function editPatient(id) {
@@ -424,9 +572,14 @@
 
         // Fechar modal ao clicar fora
         window.onclick = function(event) {
-            const modal = document.getElementById('addPatientModal');
-            if (event.target === modal) {
+            const addModal = document.getElementById('addPatientModal');
+            const viewModal = document.getElementById('viewPatientModal');
+            
+            if (event.target === addModal) {
                 closeAddPatientModal();
+            }
+            if (event.target === viewModal) {
+                closeViewPatientModal();
             }
         }
 
@@ -457,6 +610,10 @@
             max-height: 90vh;
             overflow-y: auto;
             box-shadow: 0 10px 40px rgba(0,0,0,0.3);
+        }
+
+        .modal-content.modal-lg {
+            max-width: 900px;
         }
 
         .modal-header {
@@ -549,6 +706,118 @@
 
             .modal-content {
                 width: 95%;
+            }
+        }
+
+        /* Estilos para detalhes do paciente */
+        .patient-details {
+            display: flex;
+            flex-direction: column;
+            gap: 25px;
+        }
+
+        .details-section {
+            border: 1px solid #e0e0e0;
+            border-radius: 10px;
+            padding: 20px;
+            background-color: #fafafa;
+        }
+
+        .details-section h4 {
+            margin: 0 0 15px 0;
+            color: var(--text-primary);
+            font-size: 1rem;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+
+        .details-grid {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 15px;
+        }
+
+        .detail-item {
+            display: flex;
+            flex-direction: column;
+            gap: 5px;
+        }
+
+        .detail-item label {
+            font-weight: 600;
+            color: var(--text-secondary);
+            font-size: 0.85rem;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+        }
+
+        .detail-item span {
+            color: var(--text-primary);
+            font-size: 0.95rem;
+            padding: 8px 0;
+        }
+
+        .observation-box {
+            background-color: white;
+            border-left: 4px solid #667eea;
+            padding: 15px;
+            border-radius: 5px;
+            color: var(--text-primary);
+            line-height: 1.6;
+            font-size: 0.95rem;
+            min-height: 80px;
+        }
+
+        .evaluations-list {
+            display: flex;
+            flex-direction: column;
+            gap: 10px;
+        }
+
+        .evaluation-item {
+            background-color: white;
+            border: 1px solid #e0e0e0;
+            border-radius: 8px;
+            padding: 12px 15px;
+            transition: all 0.3s ease;
+        }
+
+        .evaluation-item:hover {
+            border-color: #667eea;
+            box-shadow: 0 4px 12px rgba(102, 126, 234, 0.1);
+        }
+
+        .eval-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 8px;
+        }
+
+        .eval-header strong {
+            color: var(--text-primary);
+            font-size: 0.95rem;
+        }
+
+        .eval-date {
+            color: var(--text-secondary);
+            font-size: 0.85rem;
+        }
+
+        .eval-status {
+            display: flex;
+            gap: 8px;
+            flex-wrap: wrap;
+        }
+
+        @media (max-width: 768px) {
+            .details-grid {
+                grid-template-columns: 1fr;
+            }
+
+            .details-section {
+                padding: 15px;
             }
         }
     </style>
