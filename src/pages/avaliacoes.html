@@ -287,7 +287,8 @@
             const totalPages = Math.ceil(filteredEvaluations.length / itemsPerPage);
             document.getElementById('pageInfo').textContent = `Página ${currentPage} de ${totalPages}`;
             document.getElementById('prevPage').disabled = currentPage === 1;
-            document.getElementById('nextPage').disabled = currentPage === totalPages;
+            // Desabilitar próxima página se há 10 ou menos registros totais ou já está na última página
+            document.getElementById('nextPage').disabled = currentPage === totalPages || filteredEvaluations.length <= 10;
         }
 
         // Filtros

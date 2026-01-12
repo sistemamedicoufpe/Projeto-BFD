@@ -338,3 +338,28 @@
         height: 16px;
     }
 }
+
+/* ========================
+   RESPONSIVE - 1366x768 (Tablets)
+   ======================== */
+@media (max-width: 1366px) and (max-height: 900px) {
+    .reports-table td {
+        padding: 12px 10px;
+    }
+
+    .action-btns {
+        display: flex;
+        gap: 4px;
+        flex-wrap: wrap;
+    }
+
+    .btn-icon {
+        padding: 8px;
+        font-size: 0.9rem;
+    }
+
+    .charts-grid {
+        grid-template-columns: 1fr 1fr;
+    }
+}
+

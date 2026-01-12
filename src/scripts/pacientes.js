@@ -111,23 +111,117 @@ function renderSearchResults(patients) {
     });
 }
 
+// Carregar informações do usuário
+function loadUserInfo() {
+    const userData = JSON.parse(localStorage.getItem('neurodiag_user_data') || '{}');
+    const userName = document.getElementById('userName');
+
+    if (userData.nome) {
+        userName.textContent = userData.nome.split(' ')[0];
+    }
+}
+
 // Funções de ação
 function viewPatient(id) {
-    window.location.href = `index.html?patient=${id}`;
+    const patient = PatientsManager.getById(id);
+    if (patient) {
+        alert(`Paciente: ${patient.nome}\nCPF: ${patient.cpf}\nIdade: ${patient.idade} anos\nStatus: ${patient.status}\n\nVisualização completa em desenvolvimento`);
+    }
 }
 
 function editPatient(id) {
-    alert(`Editar paciente ${id}\n\nFuncionalidade será implementada em breve`);
+    const patient = PatientsManager.getById(id);
+    if (patient) {
+        // Preencher o modal com os dados do paciente
+        document.getElementById('patientName').value = patient.nome;
+        document.getElementById('patientCPF').value = patient.cpf;
+        document.getElementById('patientAge').value = patient.idade;
+        document.getElementById('patientStatus').value = patient.status;
+        document.getElementById('patientNotes').value = patient.observacoes || '';
+
+        // Marcar que estamos editando
+        document.getElementById('addPatientForm').dataset.editingId = id;
+        document.querySelector('#addPatientModal .modal-header h3').innerHTML = '<i class="fas fa-edit"></i> Editar Paciente';
+
+        // Abrir modal
+        document.getElementById('addPatientModal').style.display = 'flex';
+    }
 }
 
 function viewHistory(id) {
-    alert(`Visualizar histórico do paciente ${id}\n\nFuncionalidade será implementada em breve`);
+    const patient = PatientsManager.getById(id);
+    if (patient) {
+        const evaluations = EvaluationsManager.getAll().filter(e => e.patientId === id);
+        const exams = ExamsManager.getAll().filter(e => e.patientId === id);
+
+        alert(`Histórico de ${patient.nome}:\n\n` +
+              `Avaliações: ${evaluations.length}\n` +
+              `Exames: ${exams.length}\n\n` +
+              `Visualização detalhada em desenvolvimento`);
+    }
 }
 
-// Adicionar paciente
-document.getElementById('addPatientBtn').addEventListener('click', function() {
-    alert('Funcionalidade de adicionar paciente será implementada em breve');
-});
+// Modal de adicionar paciente
+function openAddPatientModal() {
+    // Limpar o formulário
+    document.getElementById('addPatientForm').reset();
+    delete document.getElementById('addPatientForm').dataset.editingId;
+    document.querySelector('#addPatientModal .modal-header h3').innerHTML = '<i class="fas fa-user-plus"></i> Novo Paciente';
 
-// Carregar pacientes ao iniciar
+    // Abrir modal
+    document.getElementById('addPatientModal').style.display = 'flex';
+}
+
+function closeAddPatientModal() {
+    document.getElementById('addPatientModal').style.display = 'none';
+}
+
+function saveNewPatient() {
+    const form = document.getElementById('addPatientForm');
+
+    if (!form.checkValidity()) {
+        alert('Por favor, preencha todos os campos obrigatórios');
+        return;
+    }
+
+    const editingId = form.dataset.editingId;
+    const patientData = {
+        nome: document.getElementById('patientName').value,
+        cpf: document.getElementById('patientCPF').value,
+        idade: parseInt(document.getElementById('patientAge').value),
+        dataNascimento: document.getElementById('patientBirth').value,
+        status: document.getElementById('patientStatus').value,
+        observacoes: document.getElementById('patientNotes').value,
+        ultimaConsulta: new Date().toLocaleDateString('pt-BR')
+    };
+
+    if (editingId) {
+        // Atualizar paciente existente
+        PatientsManager.update(editingId, patientData);
+        alert('Paciente atualizado com sucesso!');
+    } else {
+        // Adicionar novo paciente
+        PatientsManager.add(patientData);
+        alert('Paciente cadastrado com sucesso!');
+    }
+
+    closeAddPatientModal();
+    loadPatients();
+}
+
+// Fechar modal ao clicar fora
+window.onclick = function(event) {
+    const modal = document.getElementById('addPatientModal');
+    if (event.target === modal) {
+        closeAddPatientModal();
+    }
+}
+
+// Adicionar evento ao botão
+if (document.getElementById('addPatientBtn')) {
+    document.getElementById('addPatientBtn').addEventListener('click', openAddPatientModal);
+}
+
+// Inicializar
+loadUserInfo();
 loadPatients();

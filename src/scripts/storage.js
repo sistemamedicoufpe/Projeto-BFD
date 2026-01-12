@@ -179,7 +179,8 @@ const Storage = {
 
         const defaultEvaluations = [
             {
-                pacienteId: 'P-00482',
+                id: 'E-001',
+                patientId: 'P-00482',
                 type: 'cognitive',
                 date: '2023-03-10',
                 status: 'Concluída',
@@ -211,7 +212,8 @@ const Storage = {
                 }
             },
             {
-                pacienteId: 'P-00481',
+                id: 'E-002',
+                patientId: 'P-00481',
                 type: 'cognitive',
                 date: '2023-03-12',
                 status: 'Concluída',
@@ -234,7 +236,8 @@ const Storage = {
                 }
             },
             {
-                pacienteId: 'P-00480',
+                id: 'E-003',
+                patientId: 'P-00480',
                 type: 'neurological',
                 date: '2023-03-08',
                 status: 'Pendente',
@@ -452,16 +455,40 @@ const ReportsManager = {
         return Storage.get(Storage.KEYS.REPORTS) || [];
     },
 
-    // Salvar relatório
-    save(report) {
+    // Obter relatório por ID
+    getById(id) {
+        const reports = this.getAll();
+        return reports.find(r => r.id === id);
+    },
+
+    // Adicionar novo relatório
+    add(report) {
         const reports = this.getAll();
         const newReport = {
             ...report,
-            id: reports.length > 0 ? Math.max(...reports.map(r => r.id)) + 1 : 1,
+            id: report.id || 'R-' + Date.now(),
             dataCriacao: new Date().toISOString()
         };
         reports.push(newReport);
         return Storage.set(Storage.KEYS.REPORTS, reports);
+    },
+
+    // Atualizar relatório
+    update(id, updatedData) {
+        const reports = this.getAll();
+        const index = reports.findIndex(r => r.id === id);
+        if (index !== -1) {
+            reports[index] = { ...reports[index], ...updatedData };
+            return Storage.set(Storage.KEYS.REPORTS, reports);
+        }
+        return false;
+    },
+
+    // Remover relatório
+    delete(id) {
+        const reports = this.getAll();
+        const filtered = reports.filter(r => r.id !== id);
+        return Storage.set(Storage.KEYS.REPORTS, filtered);
     }
 };
 

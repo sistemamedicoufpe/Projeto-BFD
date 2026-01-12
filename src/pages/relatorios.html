@@ -536,25 +536,93 @@
             const report = ReportsManager.getById(id);
             if (report) {
                 const patient = report.patientId ? PatientsManager.getById(report.patientId) : null;
-                alert(`Relatório ${id}\n\nTipo: ${report.type}\nData: ${report.date}\n${patient ? 'Paciente: ' + patient.nome : 'Relatório Geral'}\n\nVisualização completa em desenvolvimento`);
+                const modal = document.createElement('div');
+                modal.className = 'modal';
+                modal.style.display = 'flex';
+                modal.innerHTML = `
+                    <div class="modal-content" style="width: 90%; max-width: 600px;">
+                        <div class="modal-header" style="display: flex; justify-content: space-between; align-items: center; padding: 20px; border-bottom: 1px solid #f0f0f0;">
+                            <h3 style="margin: 0;">Relatório ${report.id}</h3>
+                            <button onclick="this.closest('.modal').remove()" style="background: none; border: none; font-size: 1.5rem; cursor: pointer;">×</button>
+                        </div>
+                        <div class="modal-body" style="padding: 20px;">
+                            <p><strong>Tipo:</strong> ${report.type}</p>
+                            <p><strong>Data:</strong> ${report.date}</p>
+                            <p><strong>Status:</strong> <span class="badge" style="background: ${report.status === 'Concluído' ? '#27ae60' : '#f39c12'}; color: white; padding: 4px 8px; border-radius: 4px;">${report.status}</span></p>
+                            ${patient ? `<p><strong>Paciente:</strong> ${patient.nome}</p>` : '<p><strong>Relatório Geral</strong></p>'}
+                            <p><strong>Criado por:</strong> ${report.createdBy || 'Sistema'}</p>
+                            <p><strong>Resumo:</strong> ${report.summary || 'Sem resumo'}</p>
+                        </div>
+                        <div style="display: flex; justify-content: flex-end; gap: 10px; padding: 20px; border-top: 1px solid #f0f0f0;">
+                            <button onclick="this.closest('.modal').remove()" class="btn btn-outline">Fechar</button>
+                            <button onclick="downloadReport('${report.id}')" class="btn btn-primary">Download</button>
+                        </div>
+                    </div>
+                `;
+                document.body.appendChild(modal);
+                modal.onclick = (e) => e.target === modal && modal.remove();
+            } else {
+                alert('Relatório não encontrado');
             }
         }
 
         function downloadReport(id) {
             const report = ReportsManager.getById(id);
             if (report) {
-                const blob = new Blob([JSON.stringify(report, null, 2)], { type: 'application/json' });
+                const dataStr = JSON.stringify(report, null, 2);
+                const blob = new Blob([dataStr], { type: 'application/json' });
                 const url = URL.createObjectURL(blob);
                 const a = document.createElement('a');
                 a.href = url;
-                a.download = `relatorio-${id}.json`;
+                a.download = `relatorio-${id}-${new Date().toISOString().split('T')[0]}.json`;
                 a.click();
                 URL.revokeObjectURL(url);
+                alert('Relatório baixado com sucesso!');
+            } else {
+                alert('Relatório não encontrado');
             }
         }
 
         function shareReport(id) {
-            alert(`Compartilhar relatório ${id}\n\nOpcões de compartilhamento:\n- Email\n- WhatsApp\n- Link de compartilhamento\n\nFuncionalidade em desenvolvimento`);
+            const report = ReportsManager.getById(id);
+            if (report) {
+                const shareText = `Relatório: ${report.type}\nData: ${report.date}\nStatus: ${report.status}`;
+                if (navigator.share) {
+                    navigator.share({
+                        title: `Relatório ${report.id}`,
+                        text: shareText
+                    }).catch(err => console.log('Erro ao compartilhar:', err));
+                } else {
+                    const modal = document.createElement('div');
+                    modal.className = 'modal';
+                    modal.style.display = 'flex';
+                    modal.innerHTML = `
+                        <div class="modal-content" style="width: 90%; max-width: 400px;">
+                            <div class="modal-header" style="display: flex; justify-content: space-between; align-items: center; padding: 20px; border-bottom: 1px solid #f0f0f0;">
+                                <h3 style="margin: 0;">Compartilhar Relatório</h3>
+                                <button onclick="this.closest('.modal').remove()" style="background: none; border: none; font-size: 1.5rem; cursor: pointer;">×</button>
+                            </div>
+                            <div class="modal-body" style="padding: 20px;">
+                                <p>Escolha uma opção para compartilhar:</p>
+                                <button onclick="copyToClipboard('${shareText}'); alert('Copiado para área de transferência!'); this.closest('.modal').remove();" class="btn btn-primary" style="width: 100%; margin-bottom: 10px;">
+                                    <i class="fas fa-copy"></i> Copiar Texto
+                                </button>
+                                <a href="mailto:?subject=Relatório ${report.id}&body=${encodeURIComponent(shareText)}" class="btn btn-outline" style="width: 100%; display: inline-block; text-align: center; text-decoration: none;">
+                                    <i class="fas fa-envelope"></i> Email
+                                </a>
+                            </div>
+                        </div>
+                    `;
+                    document.body.appendChild(modal);
+                    modal.onclick = (e) => e.target === modal && modal.remove();
+                }
+            } else {
+                alert('Relatório não encontrado');
+            }
+        }
+
+        function copyToClipboard(text) {
+            navigator.clipboard.writeText(text).catch(err => console.log('Erro ao copiar:', err));
         }
 
         // Filtros

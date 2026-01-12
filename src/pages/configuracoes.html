@@ -145,7 +145,7 @@
                                 <p>Adicione uma camada extra de segurança à sua conta</p>
                             </div>
                             <label class="toggle-switch">
-                                <input type="checkbox" id="2fa-toggle">
+                                <input type="checkbox" id="2fa-toggle" onchange="toggle2FAFeature(this.checked)">
                                 <span class="toggle-slider"></span>
                             </label>
                         </div>
@@ -439,6 +439,7 @@
 
     <script src="../scripts/common.js"></script>
     <script src="../scripts/storage.js"></script>
+    <script src="../scripts/configuracoes.js"></script>
     <script>
         // ========================
         // SISTEMA DE IA LOCAL
@@ -613,6 +614,7 @@
                 }
             };
 
+            AISettingsManager.updateWeights(settings.weights);
             localAI.saveSettings(settings);
         }
 
@@ -747,8 +749,10 @@
                 this.classList.add('active');
 
                 const theme = this.dataset.theme;
-                SettingsManager.update('theme', theme);
-                alert(`Tema alterado para: ${theme}`);
+                const settings = AppearanceManager.load();
+                settings.theme = theme;
+                AppearanceManager.save(settings);
+                alert(`Tema alterado para: ${theme === 'light' ? 'Claro' : theme === 'dark' ? 'Escuro' : 'Automático'}`);
             });
         });
 
@@ -756,7 +760,10 @@
         function changeFontSize(size) {
             document.querySelectorAll('.font-size-control .btn').forEach(btn => btn.classList.remove('active'));
             event.target.classList.add('active');
-            SettingsManager.update('fontSize', size);
+            
+            const settings = AppearanceManager.load();
+            settings.fontSize = size;
+            AppearanceManager.save(settings);
         }
 
         // Confidence Slider
@@ -771,7 +778,9 @@
                 patients: PatientsManager.getAll(),
                 evaluations: EvaluationsManager.getAll(),
                 exams: ExamsManager.getAll(),
-                reports: ReportsManager.getAll()
+                reports: ReportsManager.getAll(),
+                exportDate: new Date().toISOString(),
+                exportedBy: ProfileManager.load().nome
             };
 
             const dataStr = JSON.stringify(data, null, 2);
@@ -781,14 +790,18 @@
             a.href = url;
             a.download = `neurodiagnostico-backup-${new Date().toISOString().split('T')[0]}.json`;
             a.click();
+            URL.revokeObjectURL(url);
+            alert('Dados exportados com sucesso!');
         }
 
         function clearAllData() {
             if (confirm('ATENÇÃO: Esta ação removerá todos os dados do sistema. Tem certeza?')) {
                 if (confirm('Esta ação é IRREVERSÍVEL. Deseja continuar?')) {
-                    Storage.clear();
-                    alert('Todos os dados foram removidos. A página será recarregada.');
-                    window.location.reload();
+                    if (confirm('Digite "CONFIRMAR" para continuar:')) {
+                        Storage.clear();
+                        alert('Todos os dados foram removidos. A página será recarregada.');
+                        window.location.reload();
+                    }
                 }
             }
         }
@@ -798,19 +811,44 @@
             form.addEventListener('submit', function(e) {
                 e.preventDefault();
 
-                // Salvar dados do usuário
-                const userData = {
-                    nome: document.querySelector('#profile input[type="text"]').value,
-                    email: document.querySelector('#profile input[type="email"]').value,
-                    crm: document.querySelectorAll('#profile input[type="text"]')[1]?.value,
-                    telefone: document.querySelector('#profile input[type="tel"]')?.value,
-                    especialidade: document.querySelector('#profile select')?.value,
-                    instituicao: document.querySelectorAll('#profile input[type="text"]')[2]?.value
-                };
+                // Identificar qual formulário foi submetido
+                const formPanel = this.closest('.settings-panel');
+                
+                if (formPanel && formPanel.id === 'profile') {
+                    // Salvar dados do perfil
+                    const userData = {
+                        nome: document.querySelector('#profile input[type="text"]').value,
+                        email: document.querySelector('#profile input[type="email"]').value,
+                        crm: document.querySelectorAll('#profile input[type="text"]')[1]?.value,
+                        telefone: document.querySelector('#profile input[type="tel"]')?.value,
+                        especialidade: document.querySelector('#profile select')?.value,
+                        instituicao: document.querySelectorAll('#profile input[type="text"]')[2]?.value
+                    };
 
-                localStorage.setItem('neurodiag_user_data', JSON.stringify(userData));
-                alert('Configurações salvas com sucesso!');
-                loadUserInfo();
+                    ProfileManager.save(userData);
+                    alert('Perfil atualizado com sucesso!');
+                    loadUserInfo();
+                } else if (formPanel && formPanel.id === 'security') {
+                    // Salvar dados de segurança
+                    const currentPassword = document.querySelector('#security input[type="password"]').value;
+                    const newPassword = document.querySelectorAll('#security input[type="password"]')[1]?.value;
+                    const confirmPassword = document.querySelectorAll('#security input[type="password"]')[2]?.value;
+
+                    if (!currentPassword || !newPassword || !confirmPassword) {
+                        alert('Por favor, preencha todos os campos de senha');
+                        return;
+                    }
+
+                    const result = SecurityManager.changePassword(currentPassword, newPassword, confirmPassword);
+                    if (result.success) {
+                        alert('Senha alterada com sucesso!');
+                        form.reset();
+                    } else {
+                        alert('Erro: ' + result.error);
+                    }
+                } else {
+                    alert('Configurações salvas com sucesso!');
+                }
             });
         });
 
@@ -818,6 +856,52 @@
         loadUserInfo();
         loadAISettings();
         updateAIMetrics();
+
+        // ========================
+        // FUNÇÕES ADICIONAIS
+        // ========================
+
+        function toggle2FAFeature(enabled) {
+            SecurityManager.toggle2FA(enabled);
+            alert(enabled ? '2FA ativado com sucesso!' : '2FA desativado.');
+        }
+
+        // Carregar configurações de notificações
+        function loadNotificationSettings() {
+            const notif = NotificationManager.load();
+            const form = document.getElementById('notifications');
+            if (form) {
+                const checkboxes = form.querySelectorAll('input[type="checkbox"]');
+                checkboxes[0].checked = notif.emailNotifications;
+                checkboxes[1].checked = notif.pushNotifications;
+                checkboxes[2].checked = notif.newPatients;
+                checkboxes[3].checked = notif.completedEvaluations;
+                checkboxes[4].checked = notif.aiResults;
+            }
+        }
+
+        // Salvar configurações de notificações
+        function saveNotificationSettings() {
+            const form = document.getElementById('notifications');
+            if (form) {
+                const checkboxes = form.querySelectorAll('input[type="checkbox"]');
+                NotificationManager.save({
+                    emailNotifications: checkboxes[0].checked,
+                    pushNotifications: checkboxes[1].checked,
+                    newPatients: checkboxes[2].checked,
+                    completedEvaluations: checkboxes[3].checked,
+                    aiResults: checkboxes[4].checked
+                });
+            }
+        }
+
+        // Adicionar listeners para notificações
+        document.getElementById('notifications')?.querySelectorAll('input[type="checkbox"]').forEach(checkbox => {
+            checkbox.addEventListener('change', saveNotificationSettings);
+        });
+
+        // Carregar settings ao iniciar
+        loadNotificationSettings();
     </script>
 
     <style>
