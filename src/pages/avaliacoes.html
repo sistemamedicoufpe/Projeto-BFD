@@ -433,8 +433,18 @@
             document.getElementById('evaluationModal').style.display = 'none';
         }
 
-        function editEvaluation() {
-            alert('Funcionalidade de edição será implementada em breve');
+        function editEvaluation(evaluationId) {
+            try {
+                const evaluation = allEvaluations.find(e => e.id === evaluationId);
+                if (!evaluation) {
+                    alert('Avaliação não encontrada');
+                    return;
+                }
+                alert('Funcionalidade de edição será implementada em breve');
+            } catch (error) {
+                console.error('Erro ao editar avaliação:', error);
+                alert('Erro ao editar avaliação: ' + error.message);
+            }
         }
 
         // Fechar modal ao clicar fora

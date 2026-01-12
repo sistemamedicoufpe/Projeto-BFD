@@ -538,36 +538,57 @@
         }
 
         function saveNewPatient() {
-            const form = document.getElementById('addPatientForm');
+            try {
+                const form = document.getElementById('addPatientForm');
 
-            if (!form.checkValidity()) {
-                alert('Por favor, preencha todos os campos obrigatórios');
-                return;
+                if (!form.checkValidity()) {
+                    alert('Por favor, preencha todos os campos obrigatórios');
+                    return;
+                }
+
+                const editingId = form.dataset.editingId;
+                const patientData = {
+                    nome: document.getElementById('patientName').value.trim(),
+                    cpf: document.getElementById('patientCPF').value.trim(),
+                    idade: parseInt(document.getElementById('patientAge').value),
+                    dataNascimento: document.getElementById('patientBirth').value,
+                    status: document.getElementById('patientStatus').value,
+                    observacoes: document.getElementById('patientNotes').value.trim(),
+                    ultimaConsulta: new Date().toLocaleDateString('pt-BR')
+                };
+
+                // Validação adicional
+                if (!patientData.nome || patientData.nome.length < 3) {
+                    alert('Nome deve ter pelo menos 3 caracteres');
+                    return;
+                }
+
+                if (!patientData.cpf || patientData.cpf.length < 11) {
+                    alert('CPF inválido');
+                    return;
+                }
+
+                if (patientData.idade < 18 || patientData.idade > 120) {
+                    alert('Idade deve estar entre 18 e 120 anos');
+                    return;
+                }
+
+                if (editingId) {
+                    // Atualizar paciente existente
+                    PatientsManager.update(editingId, patientData);
+                    alert('Paciente atualizado com sucesso!');
+                } else {
+                    // Adicionar novo paciente
+                    PatientsManager.add(patientData);
+                    alert('Paciente cadastrado com sucesso!');
+                }
+
+                closeAddPatientModal();
+                loadPatients();
+            } catch (error) {
+                console.error('Erro ao salvar paciente:', error);
+                alert('Erro ao salvar paciente: ' + error.message);
             }
-
-            const editingId = form.dataset.editingId;
-            const patientData = {
-                nome: document.getElementById('patientName').value,
-                cpf: document.getElementById('patientCPF').value,
-                idade: parseInt(document.getElementById('patientAge').value),
-                dataNascimento: document.getElementById('patientBirth').value,
-                status: document.getElementById('patientStatus').value,
-                observacoes: document.getElementById('patientNotes').value,
-                ultimaConsulta: new Date().toLocaleDateString('pt-BR')
-            };
-
-            if (editingId) {
-                // Atualizar paciente existente
-                PatientsManager.update(editingId, patientData);
-                alert('Paciente atualizado com sucesso!');
-            } else {
-                // Adicionar novo paciente
-                PatientsManager.add(patientData);
-                alert('Paciente cadastrado com sucesso!');
-            }
-
-            closeAddPatientModal();
-            loadPatients();
         }
 
         // Fechar modal ao clicar fora

@@ -795,14 +795,31 @@
         }
 
         function clearAllData() {
-            if (confirm('ATENÇÃO: Esta ação removerá todos os dados do sistema. Tem certeza?')) {
-                if (confirm('Esta ação é IRREVERSÍVEL. Deseja continuar?')) {
-                    if (confirm('Digite "CONFIRMAR" para continuar:')) {
-                        Storage.clear();
-                        alert('Todos os dados foram removidos. A página será recarregada.');
-                        window.location.reload();
-                    }
+            try {
+                // Primeira confirmação
+                if (!confirm('⚠️  ATENÇÃO: Esta ação removerá TODOS os dados do sistema.\n\nTem certeza que deseja continuar?')) {
+                    return;
                 }
+
+                // Segunda confirmação
+                if (!confirm('⚠️  Esta ação é IRREVERSÍVEL e não pode ser desfeita!\n\nDigite OK para confirmar a remoção de todos os dados.')) {
+                    return;
+                }
+
+                // Terceira confirmação - realmente importante
+                const userInput = prompt('Digite "REMOVER TUDO" (em maiúsculas) para confirmar a remoção permanente de todos os dados:');
+                if (userInput !== 'REMOVER TUDO') {
+                    alert('Operação cancelada. Nenhum dado foi removido.');
+                    return;
+                }
+
+                // Executar limpeza
+                Storage.clear();
+                alert('✓ Todos os dados foram removidos com sucesso.\n\nA página será recarregada agora.');
+                window.location.reload();
+            } catch (error) {
+                console.error('Erro ao limpar dados:', error);
+                alert('Erro ao limpar dados: ' + error.message);
             }
         }
 

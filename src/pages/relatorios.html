@@ -465,20 +465,31 @@
 
         // Funções de ação
         function exportReport() {
-            const data = {
-                patients: PatientsManager.getAll(),
-                evaluations: EvaluationsManager.getAll(),
-                reports: ReportsManager.getAll()
-            };
+            try {
+                const data = {
+                    patients: PatientsManager.getAll(),
+                    evaluations: EvaluationsManager.getAll(),
+                    reports: ReportsManager.getAll()
+                };
 
-            const dataStr = JSON.stringify(data, null, 2);
-            const blob = new Blob([dataStr], { type: 'application/json' });
-            const url = URL.createObjectURL(blob);
-            const a = document.createElement('a');
-            a.href = url;
-            a.download = `relatorio-completo-${new Date().toISOString().split('T')[0]}.json`;
-            a.click();
-            URL.revokeObjectURL(url);
+                if (!data.patients || data.patients.length === 0) {
+                    alert('Nenhum dado para exportar');
+                    return;
+                }
+
+                const dataStr = JSON.stringify(data, null, 2);
+                const blob = new Blob([dataStr], { type: 'application/json' });
+                const url = URL.createObjectURL(blob);
+                const a = document.createElement('a');
+                a.href = url;
+                a.download = `relatorio-completo-${new Date().toISOString().split('T')[0]}.json`;
+                a.click();
+                URL.revokeObjectURL(url);
+                alert('Relatório exportado com sucesso!');
+            } catch (error) {
+                console.error('Erro ao exportar relatório:', error);
+                alert('Erro ao exportar relatório: ' + error.message);
+            }
         }
 
         function generateNewReport() {
@@ -502,18 +513,19 @@
         }
 
         function generateReport() {
-            const form = document.getElementById('generateReportForm');
-            const reportType = document.getElementById('reportType').value;
+            try {
+                const form = document.getElementById('generateReportForm');
+                const reportType = document.getElementById('reportType').value;
 
-            if (!reportType) {
-                alert('Por favor, selecione o tipo de relatório');
-                return;
-            }
+                if (!reportType || reportType === '') {
+                    alert('Por favor, selecione o tipo de relatório');
+                    return;
+                }
 
-            if (reportType === 'individual' && !document.getElementById('reportPatient').value) {
-                alert('Por favor, selecione um paciente');
-                return;
-            }
+                if (reportType === 'individual' && !document.getElementById('reportPatient').value) {
+                    alert('Por favor, selecione um paciente');
+                    return;
+                }
 
             const reportData = {
                 id: 'REP-' + Date.now(),
@@ -573,8 +585,13 @@
         }
 
         function downloadReport(id) {
-            const report = ReportsManager.getById(id);
-            if (report) {
+            try {
+                const report = ReportsManager.getById(id);
+                if (!report) {
+                    alert('Relatório não encontrado');
+                    return;
+                }
+
                 const dataStr = JSON.stringify(report, null, 2);
                 const blob = new Blob([dataStr], { type: 'application/json' });
                 const url = URL.createObjectURL(blob);
@@ -584,8 +601,9 @@
                 a.click();
                 URL.revokeObjectURL(url);
                 alert('Relatório baixado com sucesso!');
-            } else {
-                alert('Relatório não encontrado');
+            } catch (error) {
+                console.error('Erro ao baixar relatório:', error);
+                alert('Erro ao baixar relatório: ' + error.message);
             }
         }
 

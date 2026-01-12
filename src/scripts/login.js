@@ -9,19 +9,46 @@ if (isAuthenticated === 'true') {
 document.getElementById('loginForm').addEventListener('submit', function(e) {
     e.preventDefault();
 
-    // Simulação de login
-    const btn = this.querySelector('.login-btn');
-    const originalText = btn.innerHTML;
+    try {
+        // Validar campos
+        const email = this.querySelector('input[type="email"]').value.trim();
+        const password = this.querySelector('input[type="password"]').value;
 
-    btn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Entrando...';
-    btn.disabled = true;
+        if (!email || !password) {
+            alert('Por favor, preencha email e senha');
+            return;
+        }
 
-    setTimeout(() => {
-        // Marcar como autenticado
-        localStorage.setItem('neurodiag_authenticated', 'true');
-        localStorage.setItem('neurodiag_login_time', new Date().toISOString());
+        // Validar email
+        const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+        if (!emailRegex.test(email)) {
+            alert('Email inválido');
+            return;
+        }
 
-        // Redirecionar para o dashboard
-        window.location.href = '../../index.html';
-    }, 1500);
+        if (password.length < 6) {
+            alert('Senha deve ter pelo menos 6 caracteres');
+            return;
+        }
+
+        // Simulação de login
+        const btn = this.querySelector('.login-btn');
+        const originalText = btn.innerHTML;
+
+        btn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Entrando...';
+        btn.disabled = true;
+
+        setTimeout(() => {
+            // Marcar como autenticado
+            localStorage.setItem('neurodiag_authenticated', 'true');
+            localStorage.setItem('neurodiag_login_time', new Date().toISOString());
+            localStorage.setItem('neurodiag_user_email', email);
+
+            // Redirecionar para o dashboard
+            window.location.href = '../../index.html';
+        }, 1500);
+    } catch (error) {
+        console.error('Erro no login:', error);
+        alert('Erro ao processar login: ' + error.message);
+    }
 });
