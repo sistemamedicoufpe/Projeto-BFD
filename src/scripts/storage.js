@@ -17,13 +17,12 @@ const Storage = {
 
     // Inicializar storage com dados de exemplo (apenas para novos usuários que optarem)
     init(loadSampleData = false) {
-        if (!this.get(this.KEYS.PATIENTS)) {
-            if (loadSampleData) {
-                this.initializeDefaultData();
-            } else {
-                // Inicializar com arrays vazios para novos usuários
-                this.initializeEmptyData();
-            }
+        if (!this.get(this.KEYS.PATIENTS) || this.get(this.KEYS.PATIENTS).length === 0) {
+            // Se não há pacientes, sempre carregar dados padrão
+            this.initializeDefaultData();
+        } else if (loadSampleData) {
+            // Se pedir explicitamente, recarregar
+            this.initializeDefaultData();
         }
     },
 
@@ -530,8 +529,8 @@ const SettingsManager = {
     }
 };
 
-// Inicializar storage quando o script carregar (sem dados de exemplo por padrão)
-Storage.init(false);
+// Inicializar storage quando o script carregar (com dados de exemplo por padrão)
+Storage.init(true);
 
 // Exportar para uso global
 window.Storage = Storage;

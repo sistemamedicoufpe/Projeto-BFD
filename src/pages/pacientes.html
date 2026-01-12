@@ -219,6 +219,12 @@
 
         // Carregar pacientes do localStorage
         function loadPatients() {
+            // Garantir que temos dados
+            if (!localStorage.getItem(Storage.KEYS.PATIENTS) || 
+                JSON.parse(localStorage.getItem(Storage.KEYS.PATIENTS) || '[]').length === 0) {
+                Storage.initializeDefaultData();
+            }
+            
             const patients = PatientsManager.getAll();
             const tbody = document.getElementById('patientsTableBody');
             tbody.innerHTML = '';

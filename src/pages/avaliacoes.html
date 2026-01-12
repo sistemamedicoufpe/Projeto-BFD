@@ -179,7 +179,20 @@
 
         // Carregar avaliações
         function loadEvaluations() {
+            // Garantir que temos dados
+            if (!localStorage.getItem(Storage.KEYS.PATIENTS) || 
+                JSON.parse(localStorage.getItem(Storage.KEYS.PATIENTS) || '[]').length === 0) {
+                Storage.initializeDefaultData();
+            }
+            
             allEvaluations = EvaluationsManager.getAll();
+            
+            // Se não há avaliações, carregar dados padrão
+            if (!allEvaluations || allEvaluations.length === 0) {
+                Storage.initializeDefaultData();
+                allEvaluations = EvaluationsManager.getAll();
+            }
+            
             filteredEvaluations = allEvaluations;
             updateStats();
             renderEvaluations();
