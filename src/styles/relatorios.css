@@ -1,0 +1,340 @@
+/* style-relatorios.css - Estilos específicos da página de Relatórios */
+
+/* ========================
+   STATISTICS & CHARTS
+   ======================== */
+.statistics {
+    background: white;
+    border-radius: 12px;
+    box-shadow: 0 2px 8px rgba(0,0,0,0.08);
+    padding: 25px;
+    margin-bottom: 30px;
+    border: 1px solid #f0f0f0;
+}
+
+.statistics h3 {
+    color: var(--text-primary);
+    margin-bottom: 20px;
+    font-size: 1.1rem;
+    display: flex;
+    align-items: center;
+    gap: 10px;
+}
+
+.stats-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+    gap: 15px;
+}
+
+.stat-item {
+    background: #f8f9fa;
+    padding: 20px;
+    border-radius: 8px;
+    text-align: center;
+}
+
+.stat-label {
+    color: var(--text-secondary);
+    font-size: 0.9rem;
+    margin-bottom: 8px;
+    font-weight: 500;
+}
+
+.stat-value {
+    color: var(--primary);
+    font-size: 1.8rem;
+    font-weight: 700;
+}
+
+.stat-change {
+    font-size: 0.8rem;
+    margin-top: 5px;
+    color: var(--success);
+}
+
+.stat-change.negative {
+    color: var(--danger);
+}
+
+/* ========================
+   RESULTS VISUALIZATION
+   ======================== */
+.results-section {
+    background: white;
+    border-radius: 12px;
+    box-shadow: 0 2px 8px rgba(0,0,0,0.08);
+    padding: 25px;
+    margin-bottom: 30px;
+    border: 1px solid #f0f0f0;
+}
+
+.results-section h3 {
+    color: var(--text-primary);
+    margin-bottom: 20px;
+    font-size: 1.1rem;
+}
+
+.chart-container {
+    height: 320px;
+    margin-top: 20px;
+    padding: 10px;
+    background: #fafafa;
+    border-radius: 8px;
+}
+
+/* ========================
+   REPORTS TABLE
+   ======================== */
+.reports-table {
+    background: white;
+    border-radius: 12px;
+    box-shadow: 0 2px 8px rgba(0,0,0,0.08);
+    overflow: hidden;
+    margin-bottom: 20px;
+}
+
+.reports-table table {
+    width: 100%;
+    border-collapse: collapse;
+}
+
+.reports-table thead {
+    background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+    color: white;
+}
+
+.reports-table th {
+    padding: 15px;
+    text-align: left;
+    font-weight: 600;
+    text-transform: uppercase;
+    font-size: 0.85rem;
+    letter-spacing: 0.5px;
+}
+
+.reports-table td {
+    padding: 15px;
+    border-bottom: 1px solid #f0f0f0;
+}
+
+.reports-table tbody tr {
+    transition: background 0.2s;
+}
+
+.reports-table tbody tr:hover {
+    background: #f8f9fa;
+}
+
+/* ========================
+   EXPORT SECTION
+   ======================== */
+.export-options {
+    background: white;
+    border-radius: 12px;
+    box-shadow: 0 2px 8px rgba(0,0,0,0.08);
+    padding: 25px;
+    margin-bottom: 30px;
+    border: 1px solid #f0f0f0;
+}
+
+.export-options h3 {
+    color: var(--text-primary);
+    margin-bottom: 20px;
+    font-size: 1.1rem;
+}
+
+.export-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+    gap: 15px;
+    margin-bottom: 20px;
+}
+
+.export-card {
+    border: 2px solid var(--border);
+    border-radius: 10px;
+    padding: 15px;
+    text-align: center;
+    cursor: pointer;
+    transition: all 0.3s;
+}
+
+.export-card:hover {
+    border-color: var(--secondary);
+    background: rgba(52, 152, 219, 0.05);
+    transform: translateY(-2px);
+}
+
+.export-icon {
+    font-size: 2rem;
+    margin-bottom: 10px;
+    color: var(--secondary);
+}
+
+.export-card span {
+    display: block;
+    font-weight: 600;
+    color: var(--primary);
+    font-size: 0.95rem;
+}
+
+/* ========================
+   RADIO & CHECKBOX GROUPS
+   ======================== */
+.radio-group,
+.checkbox-group {
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+}
+
+.radio-label,
+.checkbox-label {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    cursor: pointer;
+    padding: 10px;
+    border-radius: 5px;
+    transition: background 0.2s;
+}
+
+.radio-label:hover,
+.checkbox-label:hover {
+    background: var(--light);
+}
+
+.radio-label input,
+.checkbox-label input {
+    cursor: pointer;
+    width: 18px;
+    height: 18px;
+}
+
+/* ========================
+   FILTERS
+   ======================== */
+.filter-section {
+    background: white;
+    border-radius: 12px;
+    box-shadow: 0 2px 8px rgba(0,0,0,0.08);
+    padding: 20px;
+    margin-bottom: 20px;
+}
+
+.filter-section h4 {
+    color: var(--primary);
+    margin-bottom: 15px;
+    font-weight: 600;
+}
+
+/* ========================
+   RESPONSIVE - Mobile
+   ======================== */
+@media (max-width: 768px) {
+    .statistics {
+        padding: 15px;
+    }
+
+    .stats-grid {
+        grid-template-columns: repeat(2, 1fr);
+        gap: 12px;
+    }
+
+    .stat-item {
+        padding: 15px;
+    }
+
+    .stat-value {
+        font-size: 1.5rem;
+    }
+
+    .stat-label {
+        font-size: 0.85rem;
+    }
+
+    .results-section {
+        padding: 15px;
+    }
+
+    .chart-container {
+        height: 250px;
+        margin-top: 15px;
+    }
+
+    .reports-table th,
+    .reports-table td {
+        padding: 10px;
+        font-size: 0.85rem;
+    }
+
+    .export-grid {
+        grid-template-columns: repeat(2, 1fr);
+    }
+
+    .export-options {
+        padding: 15px;
+    }
+}
+
+@media (max-width: 480px) {
+    .stats-grid {
+        grid-template-columns: 1fr;
+        gap: 10px;
+    }
+
+    .stat-item {
+        padding: 12px;
+    }
+
+    .stat-value {
+        font-size: 1.3rem;
+    }
+
+    .stat-label {
+        font-size: 0.8rem;
+    }
+
+    .chart-container {
+        height: 200px;
+    }
+
+    .reports-table {
+        overflow-x: auto;
+    }
+
+    .reports-table table {
+        min-width: 600px;
+    }
+
+    .reports-table th,
+    .reports-table td {
+        padding: 8px;
+        font-size: 0.75rem;
+    }
+
+    .export-grid {
+        grid-template-columns: 1fr;
+    }
+
+    .export-icon {
+        font-size: 1.5rem;
+    }
+
+    .export-card span {
+        font-size: 0.85rem;
+    }
+
+    .radio-label,
+    .checkbox-label {
+        padding: 8px;
+        font-size: 0.9rem;
+    }
+
+    .radio-label input,
+    .checkbox-label input {
+        width: 16px;
+        height: 16px;
+    }
+}

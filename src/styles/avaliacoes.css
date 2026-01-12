@@ -1,0 +1,362 @@
+/* style-avaliacoes.css - Estilos específicos da página de Avaliações */
+
+/* ========================
+   FILTERS & SEARCH
+   ======================== */
+.exam-filters {
+    display: flex;
+    gap: 10px;
+    margin-bottom: 20px;
+    flex-wrap: wrap;
+}
+
+.filter-btn {
+    padding: 8px 16px;
+    border: 2px solid var(--border);
+    background: white;
+    border-radius: 20px;
+    cursor: pointer;
+    transition: all 0.3s;
+    font-weight: 500;
+    display: flex;
+    align-items: center;
+    gap: 5px;
+}
+
+.filter-btn:hover {
+    border-color: var(--secondary);
+    background: rgba(52, 152, 219, 0.1);
+}
+
+.filter-btn.active {
+    background: var(--secondary);
+    color: white;
+    border-color: var(--secondary);
+}
+
+.search-section {
+    display: flex;
+    gap: 15px;
+    margin-bottom: 25px;
+    flex-wrap: wrap;
+}
+
+.search-bar {
+    flex: 1;
+    position: relative;
+    min-width: 300px;
+}
+
+.search-bar i {
+    position: absolute;
+    left: 15px;
+    top: 50%;
+    transform: translateY(-50%);
+    color: var(--text-secondary);
+}
+
+.search-input {
+    width: 100%;
+    padding: 12px 15px 12px 45px;
+    border: 2px solid #e0e0e0;
+    border-radius: 10px;
+    font-size: 1rem;
+    transition: all 0.3s;
+}
+
+.search-input:focus {
+    border-color: var(--secondary);
+    outline: none;
+    box-shadow: 0 0 0 3px rgba(52, 152, 219, 0.1);
+}
+
+/* ========================
+   SECTION HEADER
+   ======================== */
+.section-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 20px;
+    flex-wrap: wrap;
+    gap: 15px;
+}
+
+.section-title {
+    font-size: 1.3rem;
+    margin-bottom: 15px;
+    color: var(--primary);
+    display: flex;
+    align-items: center;
+}
+
+.section-title i {
+    margin-right: 10px;
+}
+
+.section-actions {
+    display: flex;
+    gap: 10px;
+    flex-wrap: wrap;
+}
+
+/* ========================
+   TESTS/EVALUATIONS GRID
+   ======================== */
+.tests-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(250px, 1fr));
+    gap: 15px;
+}
+
+.test-card {
+    background: white;
+    border-radius: 12px;
+    box-shadow: 0 2px 8px rgba(0,0,0,0.08);
+    padding: 20px;
+    cursor: pointer;
+    transition: all 0.3s;
+    border: 1px solid #f0f0f0;
+    position: relative;
+    overflow: hidden;
+    display: flex;
+    flex-direction: column;
+}
+
+.test-card::before {
+    content: '';
+    position: absolute;
+    top: 0;
+    left: 0;
+    width: 4px;
+    height: 100%;
+    background: linear-gradient(180deg, var(--secondary) 0%, var(--accent) 100%);
+    opacity: 0;
+    transition: opacity 0.3s;
+}
+
+.test-card:hover {
+    box-shadow: 0 8px 20px rgba(0,0,0,0.12);
+    transform: translateY(-3px);
+}
+
+.test-card:hover::before {
+    opacity: 1;
+}
+
+.test-name {
+    font-weight: 600;
+    margin-bottom: 12px;
+    color: var(--primary);
+    font-size: 1.05rem;
+}
+
+.test-status {
+    display: inline-block;
+    padding: 5px 12px;
+    border-radius: 20px;
+    font-size: 0.8rem;
+    margin-bottom: 12px;
+    font-weight: 500;
+}
+
+.status-completed {
+    background: linear-gradient(135deg, #d4edda 0%, #c3e6cb 100%);
+    color: var(--success);
+}
+
+.status-pending {
+    background: linear-gradient(135deg, #fff3cd 0%, #ffe69c 100%);
+    color: #856404;
+}
+
+.test-score {
+    font-size: 2rem;
+    font-weight: 700;
+    text-align: right;
+    color: var(--secondary);
+    margin-top: auto;
+}
+
+.test-description {
+    color: var(--text-secondary);
+    font-size: 0.85rem;
+    margin-bottom: 15px;
+    line-height: 1.4;
+    flex: 1;
+}
+
+/* ========================
+   STATISTICS SECTION
+   ======================== */
+.tests-section {
+    margin-bottom: 30px;
+}
+
+.statistics {
+    background: white;
+    border-radius: 12px;
+    box-shadow: 0 2px 8px rgba(0,0,0,0.08);
+    padding: 25px;
+    margin-bottom: 30px;
+    border: 1px solid #f0f0f0;
+}
+
+.statistics h3 {
+    color: var(--text-primary);
+    margin-bottom: 20px;
+    font-size: 1.1rem;
+    display: flex;
+    align-items: center;
+    gap: 10px;
+}
+
+.stats-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+    gap: 15px;
+}
+
+.stat-item {
+    background: #f8f9fa;
+    padding: 20px;
+    border-radius: 8px;
+    text-align: center;
+}
+
+.stat-label {
+    color: var(--text-secondary);
+    font-size: 0.9rem;
+    margin-bottom: 8px;
+    font-weight: 500;
+}
+
+.stat-value {
+    color: var(--primary);
+    font-size: 1.8rem;
+    font-weight: 700;
+}
+
+/* ========================
+   RESPONSIVE - Mobile
+   ======================== */
+@media (max-width: 768px) {
+    .exam-filters {
+        gap: 8px;
+        justify-content: flex-start;
+        overflow-x: auto;
+        flex-wrap: nowrap;
+        padding-bottom: 10px;
+    }
+
+    .filter-btn {
+        padding: 6px 12px;
+        font-size: 0.85rem;
+        white-space: nowrap;
+    }
+
+    .tests-grid {
+        grid-template-columns: repeat(auto-fill, minmax(200px, 1fr));
+        gap: 10px;
+    }
+
+    .test-card {
+        padding: 12px;
+    }
+
+    .test-name {
+        font-size: 0.95rem;
+        margin-bottom: 8px;
+    }
+
+    .test-score {
+        font-size: 1.5rem;
+    }
+
+    .section-header {
+        flex-direction: column;
+        align-items: stretch;
+        gap: 10px;
+    }
+
+    .section-title {
+        font-size: 1.1rem;
+    }
+
+    .section-actions {
+        width: 100%;
+        flex-direction: column;
+    }
+
+    .section-actions .btn {
+        flex: 1;
+        width: 100%;
+    }
+
+    .search-section {
+        flex-direction: column;
+        gap: 10px;
+    }
+
+    .search-bar {
+        min-width: auto;
+        width: 100%;
+    }
+
+    .search-input {
+        padding: 10px 12px 10px 40px;
+        font-size: 0.9rem;
+    }
+
+    .stats-grid {
+        grid-template-columns: repeat(2, 1fr);
+    }
+}
+
+@media (max-width: 480px) {
+    .tests-grid {
+        grid-template-columns: 1fr;
+        gap: 10px;
+    }
+
+    .test-card {
+        padding: 12px;
+    }
+
+    .test-name {
+        font-size: 0.9rem;
+    }
+
+    .test-description {
+        font-size: 0.8rem;
+    }
+
+    .test-score {
+        font-size: 1.3rem;
+    }
+
+    .filter-btn {
+        padding: 5px 10px;
+        font-size: 0.8rem;
+    }
+
+    .section-title {
+        font-size: 1rem;
+    }
+
+    .stat-item {
+        padding: 15px;
+    }
+
+    .stat-value {
+        font-size: 1.5rem;
+    }
+
+    .stat-label {
+        font-size: 0.8rem;
+    }
+
+    .stats-grid {
+        grid-template-columns: 1fr;
+    }
+}

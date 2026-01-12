@@ -1,0 +1,352 @@
+/* style-pacientes.css - Estilos específicos da página de Pacientes */
+
+/* ========================
+   SEARCH SECTION
+   ======================== */
+.search-section {
+    display: flex;
+    gap: 15px;
+    margin-bottom: 25px;
+    flex-wrap: wrap;
+}
+
+.search-bar {
+    flex: 1;
+    position: relative;
+    min-width: 300px;
+}
+
+.search-bar i {
+    position: absolute;
+    left: 15px;
+    top: 50%;
+    transform: translateY(-50%);
+    color: var(--text-secondary);
+}
+
+.search-input {
+    width: 100%;
+    padding: 12px 15px 12px 45px;
+    border: 2px solid #e0e0e0;
+    border-radius: 10px;
+    font-size: 1rem;
+    transition: all 0.3s;
+}
+
+.search-input:focus {
+    border-color: var(--secondary);
+    outline: none;
+    box-shadow: 0 0 0 3px rgba(52, 152, 219, 0.1);
+}
+
+/* ========================
+   PATIENTS TABLE
+   ======================== */
+.patients-table {
+    background: white;
+    border-radius: 12px;
+    box-shadow: 0 2px 8px rgba(0,0,0,0.08);
+    overflow: hidden;
+    margin-bottom: 20px;
+}
+
+.patients-table table {
+    width: 100%;
+    border-collapse: collapse;
+}
+
+.patients-table thead {
+    background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+    color: white;
+}
+
+.patients-table th {
+    padding: 15px;
+    text-align: left;
+    font-weight: 600;
+    text-transform: uppercase;
+    font-size: 0.85rem;
+    letter-spacing: 0.5px;
+}
+
+.patients-table td {
+    padding: 15px;
+    border-bottom: 1px solid #f0f0f0;
+}
+
+.patients-table tbody tr {
+    transition: background 0.2s;
+}
+
+.patients-table tbody tr:hover {
+    background: #f8f9fa;
+}
+
+/* ========================
+   PATIENT CELL - Avatar & Info
+   ======================== */
+.patient-cell {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+}
+
+.patient-avatar-small {
+    width: 40px;
+    height: 40px;
+    border-radius: 50%;
+    background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    color: white;
+    font-weight: 600;
+    font-size: 0.9rem;
+    flex-shrink: 0;
+}
+
+.patient-cell small {
+    display: block;
+    color: var(--text-secondary);
+    font-size: 0.85rem;
+    margin-top: 2px;
+}
+
+/* ========================
+   PATIENT INFO - Detail View
+   ======================== */
+.patient-info {
+    background: white;
+    border-radius: 12px;
+    box-shadow: 0 2px 8px rgba(0,0,0,0.08);
+    padding: 25px;
+    margin-bottom: 30px;
+    border: 1px solid #f0f0f0;
+}
+
+.patient-header {
+    display: flex;
+    align-items: center;
+    margin-bottom: 25px;
+    padding-bottom: 20px;
+    border-bottom: 2px solid #f5f5f5;
+}
+
+.patient-avatar {
+    width: 80px;
+    height: 80px;
+    border-radius: 50%;
+    margin-right: 20px;
+    background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 2rem;
+    color: white;
+    box-shadow: 0 4px 12px rgba(102, 126, 234, 0.3);
+    flex-shrink: 0;
+}
+
+.patient-details h3 {
+    font-size: 1.5rem;
+    margin-bottom: 5px;
+    color: var(--primary);
+    font-weight: 600;
+}
+
+.patient-details p {
+    color: var(--text-secondary);
+    font-size: 0.95rem;
+}
+
+/* ========================
+   INFO GRID
+   ======================== */
+.info-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+    gap: 20px;
+}
+
+.info-item {
+    background: #f8f9fa;
+    padding: 15px;
+    border-radius: 8px;
+    transition: all 0.2s;
+}
+
+.info-item:hover {
+    background: #e9ecef;
+    transform: translateY(-2px);
+}
+
+.info-label {
+    font-size: 0.75rem;
+    color: var(--text-secondary);
+    text-transform: uppercase;
+    margin-bottom: 8px;
+    letter-spacing: 0.5px;
+    font-weight: 600;
+}
+
+.info-value {
+    font-weight: 600;
+    color: var(--primary);
+    font-size: 1rem;
+    word-break: break-word;
+}
+
+/* ========================
+   ACTION BUTTONS
+   ======================== */
+.action-buttons {
+    display: flex;
+    gap: 10px;
+    margin-top: 20px;
+    flex-wrap: wrap;
+}
+
+.action-btns {
+    display: flex;
+    gap: 8px;
+}
+
+/* ========================
+   PAGINATION
+   ======================== */
+.pagination {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 20px;
+    background: white;
+    border-radius: 12px;
+    box-shadow: 0 2px 8px rgba(0,0,0,0.08);
+}
+
+.pagination-info {
+    color: var(--text-secondary);
+    font-weight: 500;
+}
+
+/* ========================
+   RESPONSIVE - Mobile
+   ======================== */
+@media (max-width: 768px) {
+    .search-section {
+        flex-direction: column;
+        gap: 10px;
+    }
+
+    .search-bar {
+        min-width: auto;
+        width: 100%;
+    }
+
+    .search-section .btn {
+        flex: 1;
+        width: 100%;
+    }
+
+    /* Patient Info Mobile */
+    .patient-info {
+        padding: 15px;
+    }
+
+    .patient-header {
+        flex-direction: column;
+        text-align: center;
+        gap: 15px;
+    }
+
+    .patient-avatar {
+        margin-right: 0;
+        margin-bottom: 0;
+        width: 60px;
+        height: 60px;
+        font-size: 1.5rem;
+    }
+
+    .patient-details h3 {
+        font-size: 1.2rem;
+    }
+
+    .patient-details p {
+        font-size: 0.85rem;
+    }
+
+    .info-grid {
+        grid-template-columns: 1fr;
+        gap: 12px;
+    }
+
+    .action-buttons {
+        flex-direction: column;
+    }
+
+    .action-buttons .btn {
+        width: 100%;
+    }
+
+    /* Table Mobile */
+    .patients-table {
+        overflow-x: auto;
+    }
+
+    .patients-table table {
+        min-width: 600px;
+    }
+
+    .patients-table th,
+    .patients-table td {
+        padding: 10px;
+        font-size: 0.85rem;
+    }
+}
+
+@media (max-width: 480px) {
+    .search-bar {
+        width: 100%;
+    }
+
+    .search-input {
+        padding: 10px 12px 10px 40px;
+        font-size: 0.9rem;
+    }
+
+    .patient-avatar {
+        width: 50px;
+        height: 50px;
+        font-size: 1.2rem;
+    }
+
+    .patient-details h3 {
+        font-size: 1.1rem;
+    }
+
+    .patients-table th,
+    .patients-table td {
+        padding: 8px;
+        font-size: 0.75rem;
+    }
+
+    .patient-cell {
+        gap: 8px;
+    }
+
+    .patient-avatar-small {
+        width: 36px;
+        height: 36px;
+        font-size: 0.8rem;
+    }
+
+    .pagination {
+        flex-direction: column;
+        gap: 10px;
+        align-items: stretch;
+    }
+
+    .pagination-info {
+        text-align: center;
+    }
+}
