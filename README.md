@@ -2,7 +2,7 @@
 
 > Sistema completo de avaliação neurológica e auxílio ao diagnóstico de demências, com integração de inteligência artificial.
 
-![Versão](https://img.shields.io/badge/versão-2.0.0-blue.svg)
+![Versão](https://img.shields.io/badge/versão-2.1.0-blue.svg)
 ![Licença](https://img.shields.io/badge/licença-MIT-green.svg)
 ![Status](https://img.shields.io/badge/status-ativo-success.svg)
 
@@ -141,7 +141,7 @@ Probabilidades visuais para:
 
 1. **Clone o repositório**
 ```bash
-git clone https://github.com/seu-usuario/Projeto-BFD.git
+git clone https://github.com/sistemamedicoufpe/Projeto-BFD.git
 cd Projeto-BFD
 ```
 
@@ -156,6 +156,7 @@ cd Projeto-BFD
 ```
 Não precisa instalar nada!
 Todas as bibliotecas são carregadas via CDN.
+Dados são armazenados localmente no seu navegador.
 ```
 
 ### Requisitos Mínimos
@@ -163,6 +164,7 @@ Todas as bibliotecas são carregadas via CDN.
 - **Navegador moderno** (Chrome 90+, Firefox 88+, Safari 14+, Edge 90+)
 - **JavaScript habilitado**
 - **Conexão com internet** (apenas para carregar bibliotecas CDN na primeira vez)
+- **LocalStorage ativado** (para armazenar dados localmente)
 
 ## 📱 Responsividade
 
@@ -671,7 +673,7 @@ Contribuições são muito bem-vindas! Aqui está como você pode ajudar:
 
 - **Issues do GitHub**: Para bugs e sugestões
 - **Discussions**: Para perguntas e discussões gerais
-- **Email**: [seu-email@exemplo.com]
+- **Email**: [contato@neurodiagnostico.com.br]
 
 ### 📚 Recursos Adicionais
 
@@ -723,10 +725,10 @@ O sistema prioriza:
 
 ## 📊 Estatísticas do Projeto
 
-![GitHub stars](https://img.shields.io/github/stars/seu-usuario/Projeto-BFD?style=social)
-![GitHub forks](https://img.shields.io/github/forks/seu-usuario/Projeto-BFD?style=social)
-![GitHub issues](https://img.shields.io/github/issues/seu-usuario/Projeto-BFD)
-![GitHub pull requests](https://img.shields.io/github/issues-pr/seu-usuario/Projeto-BFD)
+![GitHub stars](https://img.shields.io/github/stars/sistemamedicoufpe/Projeto-BFD?style=social)
+![GitHub forks](https://img.shields.io/github/forks/sistemamedicoufpe/Projeto-BFD?style=social)
+![GitHub issues](https://img.shields.io/github/issues/sistemamedicoufpe/Projeto-BFD)
+![GitHub pull requests](https://img.shields.io/github/issues-pr/sistemamedicoufpe/Projeto-BFD)
 
 ---
 
@@ -740,7 +742,7 @@ O sistema prioriza:
 
 ---
 
-**Versão**: 2.0.0
-**Última atualização**: Janeiro 2025
+**Versão**: 2.1.0
+**Última atualização**: Janeiro 2026
 **Desenvolvido para**: Profissionais de saúde especializados em avaliação neurológica e diagnóstico de demências
 **Status**: ✅ Produção
