@@ -35,9 +35,9 @@
                 <h2>Central de Ajuda</h2>
                 <div class="user-info">
                     <div class="user-avatar">
-                        <img src="https://i.pravatar.cc/150?img=12" alt="Dr. Silva">
+                        <i class="fas fa-user-circle"></i>
                     </div>
-                    <span>Dr. Silva</span>
+                    <span id="userName">Usuário</span>
                 </div>
             </div>
 
@@ -366,6 +366,16 @@
     <script src="../scripts/storage.js"></script>
     <script src="../scripts/script.js"></script>
     <script>
+        // Carregar nome do usuário
+        function loadUserInfo() {
+            const userData = JSON.parse(localStorage.getItem('neurodiag_user_data') || '{}');
+            const userName = document.getElementById('userName');
+
+            if (userData.nome) {
+                userName.textContent = userData.nome.split(' ')[0];
+            }
+        }
+
         // FAQ Accordion
         document.querySelectorAll('.faq-question').forEach(button => {
             button.addEventListener('click', function() {
@@ -414,6 +424,9 @@
             return (total / 1024).toFixed(2) + ' KB';
         }
         document.getElementById('storageInfo').textContent = calculateStorageSize();
+
+        // Inicializar página
+        document.addEventListener('DOMContentLoaded', loadUserInfo);
     </script>
 
     <style>

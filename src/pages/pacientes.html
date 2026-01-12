@@ -35,9 +35,12 @@
                 <h2>Gerenciamento de Pacientes</h2>
                 <div class="user-info">
                     <div class="user-avatar">
-                        <img src="https://i.pravatar.cc/150?img=12" alt="Dr. Silva">
+                        <i class="fas fa-user-circle"></i>
                     </div>
-                    <span>Dr. Silva</span>
+                    <span id="userName">Usuário</span>
+                    <button class="btn-icon" onclick="logout()" title="Sair" style="margin-left: 10px;">
+                        <i class="fas fa-sign-out-alt"></i>
+                    </button>
                 </div>
             </div>
 
@@ -145,9 +148,74 @@
         </div>
     </div>
 
+    <!-- Add Patient Modal -->
+    <div id="addPatientModal" class="modal">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h3><i class="fas fa-user-plus"></i> Novo Paciente</h3>
+                <button class="close-btn" onclick="closeAddPatientModal()">
+                    <i class="fas fa-times"></i>
+                </button>
+            </div>
+            <div class="modal-body">
+                <form id="addPatientForm" class="settings-form">
+                    <div class="form-row">
+                        <div class="form-group">
+                            <label>Nome Completo *</label>
+                            <input type="text" id="patientName" class="form-input" required>
+                        </div>
+                        <div class="form-group">
+                            <label>CPF *</label>
+                            <input type="text" id="patientCPF" class="form-input" placeholder="000.000.000-00" required>
+                        </div>
+                    </div>
+                    <div class="form-row">
+                        <div class="form-group">
+                            <label>Idade *</label>
+                            <input type="number" id="patientAge" class="form-input" min="0" required>
+                        </div>
+                        <div class="form-group">
+                            <label>Data de Nascimento</label>
+                            <input type="date" id="patientBirth" class="form-input">
+                        </div>
+                    </div>
+                    <div class="form-group">
+                        <label>Status</label>
+                        <select id="patientStatus" class="form-input">
+                            <option value="Pendente">Pendente</option>
+                            <option value="Em Avaliação" selected>Em Avaliação</option>
+                            <option value="Concluído">Concluído</option>
+                            <option value="Agendado">Agendado</option>
+                        </select>
+                    </div>
+                    <div class="form-group">
+                        <label>Observações</label>
+                        <textarea id="patientNotes" class="form-input" rows="3"></textarea>
+                    </div>
+                </form>
+            </div>
+            <div class="modal-footer">
+                <button class="btn btn-outline" onclick="closeAddPatientModal()">Cancelar</button>
+                <button class="btn btn-primary" onclick="saveNewPatient()">
+                    <i class="fas fa-save"></i> Salvar Paciente
+                </button>
+            </div>
+        </div>
+    </div>
+
+    <script src="../scripts/common.js"></script>
     <script src="../scripts/storage.js"></script>
-    <script src="../scripts/script.js"></script>
     <script>
+        // Carregar informações do usuário
+        function loadUserInfo() {
+            const userData = JSON.parse(localStorage.getItem('neurodiag_user_data') || '{}');
+            const userName = document.getElementById('userName');
+
+            if (userData.nome) {
+                userName.textContent = userData.nome.split(' ')[0];
+            }
+        }
+
         // Carregar pacientes do localStorage
         function loadPatients() {
             const patients = PatientsManager.getAll();
@@ -261,24 +329,221 @@
 
         // Funções de ação
         function viewPatient(id) {
-            window.location.href = `index.html?patient=${id}`;
+            const patient = PatientsManager.getById(id);
+            if (patient) {
+                alert(`Paciente: ${patient.nome}\nCPF: ${patient.cpf}\nIdade: ${patient.idade} anos\nStatus: ${patient.status}\n\nVisualização completa em desenvolvimento`);
+            }
         }
 
         function editPatient(id) {
-            alert(`Editar paciente ${id}\n\nFuncionalidade será implementada em breve`);
+            const patient = PatientsManager.getById(id);
+            if (patient) {
+                // Preencher o modal com os dados do paciente
+                document.getElementById('patientName').value = patient.nome;
+                document.getElementById('patientCPF').value = patient.cpf;
+                document.getElementById('patientAge').value = patient.idade;
+                document.getElementById('patientStatus').value = patient.status;
+                document.getElementById('patientNotes').value = patient.observacoes || '';
+
+                // Marcar que estamos editando
+                document.getElementById('addPatientForm').dataset.editingId = id;
+                document.querySelector('#addPatientModal .modal-header h3').innerHTML = '<i class="fas fa-edit"></i> Editar Paciente';
+
+                // Abrir modal
+                document.getElementById('addPatientModal').style.display = 'flex';
+            }
         }
 
         function viewHistory(id) {
-            alert(`Visualizar histórico do paciente ${id}\n\nFuncionalidade será implementada em breve`);
+            const patient = PatientsManager.getById(id);
+            if (patient) {
+                const evaluations = EvaluationsManager.getAll().filter(e => e.patientId === id);
+                const exams = ExamsManager.getAll().filter(e => e.patientId === id);
+
+                alert(`Histórico de ${patient.nome}:\n\n` +
+                      `Avaliações: ${evaluations.length}\n` +
+                      `Exames: ${exams.length}\n\n` +
+                      `Visualização detalhada em desenvolvimento`);
+            }
         }
 
-        // Adicionar paciente
+        // Modal de adicionar paciente
         document.getElementById('addPatientBtn').addEventListener('click', function() {
-            alert('Funcionalidade de adicionar paciente será implementada em breve');
+            // Limpar o formulário
+            document.getElementById('addPatientForm').reset();
+            delete document.getElementById('addPatientForm').dataset.editingId;
+            document.querySelector('#addPatientModal .modal-header h3').innerHTML = '<i class="fas fa-user-plus"></i> Novo Paciente';
+
+            // Abrir modal
+            document.getElementById('addPatientModal').style.display = 'flex';
         });
 
-        // Carregar pacientes ao iniciar
+        function closeAddPatientModal() {
+            document.getElementById('addPatientModal').style.display = 'none';
+        }
+
+        function saveNewPatient() {
+            const form = document.getElementById('addPatientForm');
+
+            if (!form.checkValidity()) {
+                alert('Por favor, preencha todos os campos obrigatórios');
+                return;
+            }
+
+            const editingId = form.dataset.editingId;
+            const patientData = {
+                nome: document.getElementById('patientName').value,
+                cpf: document.getElementById('patientCPF').value,
+                idade: parseInt(document.getElementById('patientAge').value),
+                dataNascimento: document.getElementById('patientBirth').value,
+                status: document.getElementById('patientStatus').value,
+                observacoes: document.getElementById('patientNotes').value,
+                ultimaConsulta: new Date().toLocaleDateString('pt-BR')
+            };
+
+            if (editingId) {
+                // Atualizar paciente existente
+                PatientsManager.update(editingId, patientData);
+                alert('Paciente atualizado com sucesso!');
+            } else {
+                // Adicionar novo paciente
+                PatientsManager.add(patientData);
+                alert('Paciente cadastrado com sucesso!');
+            }
+
+            closeAddPatientModal();
+            loadPatients();
+        }
+
+        // Fechar modal ao clicar fora
+        window.onclick = function(event) {
+            const modal = document.getElementById('addPatientModal');
+            if (event.target === modal) {
+                closeAddPatientModal();
+            }
+        }
+
+        // Inicializar
+        loadUserInfo();
         loadPatients();
     </script>
+
+    <style>
+        .modal {
+            display: none;
+            position: fixed;
+            z-index: 1000;
+            left: 0;
+            top: 0;
+            width: 100%;
+            height: 100%;
+            background-color: rgba(0,0,0,0.5);
+            align-items: center;
+            justify-content: center;
+        }
+
+        .modal-content {
+            background-color: white;
+            border-radius: 15px;
+            width: 90%;
+            max-width: 700px;
+            max-height: 90vh;
+            overflow-y: auto;
+            box-shadow: 0 10px 40px rgba(0,0,0,0.3);
+        }
+
+        .modal-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 25px;
+            border-bottom: 1px solid #f0f0f0;
+        }
+
+        .modal-header h3 {
+            margin: 0;
+            color: var(--text-primary);
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+
+        .close-btn {
+            background: none;
+            border: none;
+            font-size: 1.5rem;
+            cursor: pointer;
+            color: var(--text-secondary);
+            transition: color 0.3s;
+        }
+
+        .close-btn:hover {
+            color: var(--text-primary);
+        }
+
+        .modal-body {
+            padding: 25px;
+        }
+
+        .modal-footer {
+            display: flex;
+            justify-content: flex-end;
+            gap: 10px;
+            padding: 25px;
+            border-top: 1px solid #f0f0f0;
+        }
+
+        .settings-form {
+            display: flex;
+            flex-direction: column;
+            gap: 20px;
+        }
+
+        .form-row {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 20px;
+        }
+
+        .form-group {
+            display: flex;
+            flex-direction: column;
+            gap: 8px;
+        }
+
+        .form-group label {
+            font-size: 0.9rem;
+            color: var(--text-secondary);
+            font-weight: 500;
+        }
+
+        .form-input {
+            padding: 12px 15px;
+            border: 2px solid #e0e0e0;
+            border-radius: 8px;
+            font-size: 0.95rem;
+            transition: border-color 0.3s;
+            font-family: inherit;
+        }
+
+        .form-input:focus {
+            outline: none;
+            border-color: #667eea;
+        }
+
+        textarea.form-input {
+            resize: vertical;
+        }
+
+        @media (max-width: 768px) {
+            .form-row {
+                grid-template-columns: 1fr;
+            }
+
+            .modal-content {
+                width: 95%;
+            }
+        }
+    </style>
 </body>
 </html>
