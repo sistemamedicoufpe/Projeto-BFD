@@ -1,0 +1,725 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Configurações - NeuroDiagnóstico</title>
+    <link rel="stylesheet" href="../styles/style.css">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
+</head>
+<body>
+    <!-- Menu Toggle Button -->
+    <button class="menu-toggle" id="menuToggle" aria-label="Alternar menu">
+        <i class="fas fa-bars"></i>
+    </button>
+
+    <div class="container">
+        <!-- Sidebar -->
+        <div class="sidebar mobile-hidden" id="sidebar">
+            <div class="logo">
+                <h1>NeuroDiagnóstico</h1>
+            </div>
+            <ul class="nav-links">
+                <li><a href="../../index.html"><i class="fas fa-home"></i> Dashboard</a></li>
+                <li><a href="pacientes.html"><i class="fas fa-user-injured"></i> Pacientes</a></li>
+                <li><a href="avaliacoes.html"><i class="fas fa-brain"></i> Avaliações</a></li>
+                <li><a href="relatorios.html"><i class="fas fa-chart-bar"></i> Relatórios</a></li>
+                <li><a href="configuracoes.html"><i class="fas fa-cog"></i> Configurações</a></li>
+                <li><a href="ajuda.html"><i class="fas fa-question-circle"></i> Ajuda</a></li>
+            </ul>
+        </div>
+
+        <!-- Main Content -->
+        <div class="main-content">
+            <div class="header">
+                <h2>Configurações</h2>
+                <div class="user-info">
+                    <div class="user-avatar">
+                        <img src="https://i.pravatar.cc/150?img=12" alt="Dr. Silva">
+                    </div>
+                    <span>Dr. Silva</span>
+                </div>
+            </div>
+
+            <!-- Settings Navigation -->
+            <div class="settings-nav">
+                <button class="settings-tab active" data-tab="profile">
+                    <i class="fas fa-user"></i> Perfil
+                </button>
+                <button class="settings-tab" data-tab="security">
+                    <i class="fas fa-lock"></i> Segurança
+                </button>
+                <button class="settings-tab" data-tab="notifications">
+                    <i class="fas fa-bell"></i> Notificações
+                </button>
+                <button class="settings-tab" data-tab="appearance">
+                    <i class="fas fa-palette"></i> Aparência
+                </button>
+                <button class="settings-tab" data-tab="ai">
+                    <i class="fas fa-robot"></i> IA
+                </button>
+                <button class="settings-tab" data-tab="privacy">
+                    <i class="fas fa-shield-alt"></i> Privacidade
+                </button>
+            </div>
+
+            <!-- Settings Content -->
+            <div class="settings-content">
+                <!-- Profile Tab -->
+                <div class="settings-panel active" id="profile">
+                    <div class="settings-card">
+                        <h3><i class="fas fa-user"></i> Informações do Perfil</h3>
+                        <form class="settings-form">
+                            <div class="form-row">
+                                <div class="form-group">
+                                    <label>Nome Completo</label>
+                                    <input type="text" class="form-input" value="Dr. Silva" placeholder="Seu nome completo">
+                                </div>
+                                <div class="form-group">
+                                    <label>CRM</label>
+                                    <input type="text" class="form-input" value="12345-SP" placeholder="Número do CRM">
+                                </div>
+                            </div>
+                            <div class="form-row">
+                                <div class="form-group">
+                                    <label>Email</label>
+                                    <input type="email" class="form-input" value="dr.silva@exemplo.com" placeholder="Seu email">
+                                </div>
+                                <div class="form-group">
+                                    <label>Telefone</label>
+                                    <input type="tel" class="form-input" value="(11) 98765-4321" placeholder="Seu telefone">
+                                </div>
+                            </div>
+                            <div class="form-group">
+                                <label>Especialidade</label>
+                                <select class="form-input">
+                                    <option>Neurologia</option>
+                                    <option>Psiquiatria</option>
+                                    <option>Geriatria</option>
+                                    <option>Neuropsicologia</option>
+                                </select>
+                            </div>
+                            <div class="form-group">
+                                <label>Instituição</label>
+                                <input type="text" class="form-input" value="Hospital das Clínicas" placeholder="Nome da instituição">
+                            </div>
+                            <button type="submit" class="btn btn-primary">
+                                <i class="fas fa-save"></i> Salvar Alterações
+                            </button>
+                        </form>
+                    </div>
+                </div>
+
+                <!-- Security Tab -->
+                <div class="settings-panel" id="security">
+                    <div class="settings-card">
+                        <h3><i class="fas fa-lock"></i> Segurança da Conta</h3>
+                        <form class="settings-form">
+                            <div class="form-group">
+                                <label>Senha Atual</label>
+                                <input type="password" class="form-input" placeholder="Digite sua senha atual">
+                            </div>
+                            <div class="form-group">
+                                <label>Nova Senha</label>
+                                <input type="password" class="form-input" placeholder="Digite sua nova senha">
+                            </div>
+                            <div class="form-group">
+                                <label>Confirmar Nova Senha</label>
+                                <input type="password" class="form-input" placeholder="Confirme sua nova senha">
+                            </div>
+                            <button type="submit" class="btn btn-primary">
+                                <i class="fas fa-key"></i> Alterar Senha
+                            </button>
+                        </form>
+                    </div>
+
+                    <div class="settings-card">
+                        <h3><i class="fas fa-shield-alt"></i> Autenticação em Dois Fatores</h3>
+                        <div class="setting-item">
+                            <div class="setting-info">
+                                <strong>Autenticação em Dois Fatores (2FA)</strong>
+                                <p>Adicione uma camada extra de segurança à sua conta</p>
+                            </div>
+                            <label class="toggle-switch">
+                                <input type="checkbox" id="2fa-toggle">
+                                <span class="toggle-slider"></span>
+                            </label>
+                        </div>
+                    </div>
+
+                    <div class="settings-card">
+                        <h3><i class="fas fa-history"></i> Sessões Ativas</h3>
+                        <div class="session-item">
+                            <div class="session-icon">
+                                <i class="fas fa-desktop"></i>
+                            </div>
+                            <div class="session-info">
+                                <strong>Windows - Chrome</strong>
+                                <small>São Paulo, Brasil • Ativa agora</small>
+                            </div>
+                            <button class="btn btn-sm btn-outline">Encerrar</button>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Notifications Tab -->
+                <div class="settings-panel" id="notifications">
+                    <div class="settings-card">
+                        <h3><i class="fas fa-bell"></i> Preferências de Notificação</h3>
+                        <div class="setting-item">
+                            <div class="setting-info">
+                                <strong>Notificações por Email</strong>
+                                <p>Receba atualizações importantes por email</p>
+                            </div>
+                            <label class="toggle-switch">
+                                <input type="checkbox" checked>
+                                <span class="toggle-slider"></span>
+                            </label>
+                        </div>
+                        <div class="setting-item">
+                            <div class="setting-info">
+                                <strong>Notificações Push</strong>
+                                <p>Receba notificações no navegador</p>
+                            </div>
+                            <label class="toggle-switch">
+                                <input type="checkbox" checked>
+                                <span class="toggle-slider"></span>
+                            </label>
+                        </div>
+                        <div class="setting-item">
+                            <div class="setting-info">
+                                <strong>Novos Pacientes</strong>
+                                <p>Notificar quando novos pacientes forem cadastrados</p>
+                            </div>
+                            <label class="toggle-switch">
+                                <input type="checkbox" checked>
+                                <span class="toggle-slider"></span>
+                            </label>
+                        </div>
+                        <div class="setting-item">
+                            <div class="setting-info">
+                                <strong>Avaliações Concluídas</strong>
+                                <p>Notificar quando avaliações forem finalizadas</p>
+                            </div>
+                            <label class="toggle-switch">
+                                <input type="checkbox" checked>
+                                <span class="toggle-slider"></span>
+                            </label>
+                        </div>
+                        <div class="setting-item">
+                            <div class="setting-info">
+                                <strong>Resultados da IA</strong>
+                                <p>Notificar quando a IA processar novos resultados</p>
+                            </div>
+                            <label class="toggle-switch">
+                                <input type="checkbox" checked>
+                                <span class="toggle-slider"></span>
+                            </label>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Appearance Tab -->
+                <div class="settings-panel" id="appearance">
+                    <div class="settings-card">
+                        <h3><i class="fas fa-palette"></i> Tema</h3>
+                        <div class="theme-options">
+                            <div class="theme-option active" data-theme="light">
+                                <div class="theme-preview light">
+                                    <i class="fas fa-sun"></i>
+                                </div>
+                                <span>Claro</span>
+                            </div>
+                            <div class="theme-option" data-theme="dark">
+                                <div class="theme-preview dark">
+                                    <i class="fas fa-moon"></i>
+                                </div>
+                                <span>Escuro</span>
+                            </div>
+                            <div class="theme-option" data-theme="auto">
+                                <div class="theme-preview auto">
+                                    <i class="fas fa-circle-half-stroke"></i>
+                                </div>
+                                <span>Automático</span>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="settings-card">
+                        <h3><i class="fas fa-text-height"></i> Tamanho da Fonte</h3>
+                        <div class="font-size-control">
+                            <button class="btn btn-outline btn-sm" onclick="changeFontSize('small')">Pequena</button>
+                            <button class="btn btn-outline btn-sm active" onclick="changeFontSize('medium')">Média</button>
+                            <button class="btn btn-outline btn-sm" onclick="changeFontSize('large')">Grande</button>
+                        </div>
+                    </div>
+
+                    <div class="settings-card">
+                        <h3><i class="fas fa-universal-access"></i> Acessibilidade</h3>
+                        <div class="setting-item">
+                            <div class="setting-info">
+                                <strong>Alto Contraste</strong>
+                                <p>Aumenta o contraste para melhor legibilidade</p>
+                            </div>
+                            <label class="toggle-switch">
+                                <input type="checkbox">
+                                <span class="toggle-slider"></span>
+                            </label>
+                        </div>
+                        <div class="setting-item">
+                            <div class="setting-info">
+                                <strong>Reduzir Animações</strong>
+                                <p>Minimiza animações e transições</p>
+                            </div>
+                            <label class="toggle-switch">
+                                <input type="checkbox">
+                                <span class="toggle-slider"></span>
+                            </label>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- AI Tab -->
+                <div class="settings-panel" id="ai">
+                    <div class="settings-card">
+                        <h3><i class="fas fa-robot"></i> Configurações de IA</h3>
+                        <div class="setting-item">
+                            <div class="setting-info">
+                                <strong>Assistente IA Ativo</strong>
+                                <p>Ativar sugestões automáticas da IA</p>
+                            </div>
+                            <label class="toggle-switch">
+                                <input type="checkbox" checked>
+                                <span class="toggle-slider"></span>
+                            </label>
+                        </div>
+                        <div class="setting-item">
+                            <div class="setting-info">
+                                <strong>Interpretação Automática</strong>
+                                <p>A IA analisa automaticamente novos exames</p>
+                            </div>
+                            <label class="toggle-switch">
+                                <input type="checkbox" checked>
+                                <span class="toggle-slider"></span>
+                            </label>
+                        </div>
+                        <div class="setting-item">
+                            <div class="setting-info">
+                                <strong>Sugestões de Diagnóstico</strong>
+                                <p>Exibir probabilidades de diagnóstico</p>
+                            </div>
+                            <label class="toggle-switch">
+                                <input type="checkbox" checked>
+                                <span class="toggle-slider"></span>
+                            </label>
+                        </div>
+                        <div class="form-group">
+                            <label>Nível de Confiança Mínimo</label>
+                            <input type="range" min="0" max="100" value="70" class="range-slider" id="confidenceSlider">
+                            <span id="confidenceValue">70%</span>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Privacy Tab -->
+                <div class="settings-panel" id="privacy">
+                    <div class="settings-card">
+                        <h3><i class="fas fa-shield-alt"></i> Privacidade e Dados</h3>
+                        <div class="setting-item">
+                            <div class="setting-info">
+                                <strong>Compartilhar Dados para Pesquisa</strong>
+                                <p>Dados anonimizados podem ser usados para pesquisa</p>
+                            </div>
+                            <label class="toggle-switch">
+                                <input type="checkbox">
+                                <span class="toggle-slider"></span>
+                            </label>
+                        </div>
+                        <div class="setting-item">
+                            <div class="setting-info">
+                                <strong>Anonimização Automática</strong>
+                                <p>Remover informações pessoais ao exportar dados</p>
+                            </div>
+                            <label class="toggle-switch">
+                                <input type="checkbox" checked>
+                                <span class="toggle-slider"></span>
+                            </label>
+                        </div>
+                    </div>
+
+                    <div class="settings-card">
+                        <h3><i class="fas fa-database"></i> Gerenciamento de Dados</h3>
+                        <button class="btn btn-outline" onclick="exportAllData()">
+                            <i class="fas fa-download"></i> Exportar Todos os Dados
+                        </button>
+                        <button class="btn btn-danger" onclick="clearAllData()" style="margin-top: 10px;">
+                            <i class="fas fa-trash"></i> Limpar Todos os Dados
+                        </button>
+                        <p style="color: var(--text-secondary); font-size: 0.9rem; margin-top: 10px;">
+                            Esta ação removerá todos os dados do navegador. Use com cuidado!
+                        </p>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script src="../scripts/storage.js"></script>
+    <script src="../scripts/script.js"></script>
+    <script>
+        // Tab Navigation
+        document.querySelectorAll('.settings-tab').forEach(tab => {
+            tab.addEventListener('click', function() {
+                const targetTab = this.dataset.tab;
+
+                // Update active tab
+                document.querySelectorAll('.settings-tab').forEach(t => t.classList.remove('active'));
+                this.classList.add('active');
+
+                // Show target panel
+                document.querySelectorAll('.settings-panel').forEach(p => p.classList.remove('active'));
+                document.getElementById(targetTab).classList.add('active');
+            });
+        });
+
+        // Theme Selection
+        document.querySelectorAll('.theme-option').forEach(option => {
+            option.addEventListener('click', function() {
+                document.querySelectorAll('.theme-option').forEach(o => o.classList.remove('active'));
+                this.classList.add('active');
+
+                const theme = this.dataset.theme;
+                SettingsManager.update('theme', theme);
+                alert(`Tema alterado para: ${theme}`);
+            });
+        });
+
+        // Font Size
+        function changeFontSize(size) {
+            document.querySelectorAll('.font-size-control .btn').forEach(btn => btn.classList.remove('active'));
+            event.target.classList.add('active');
+            SettingsManager.update('fontSize', size);
+        }
+
+        // Confidence Slider
+        document.getElementById('confidenceSlider').addEventListener('input', function() {
+            document.getElementById('confidenceValue').textContent = this.value + '%';
+            SettingsManager.update('aiConfidence', this.value);
+        });
+
+        // Data Management
+        function exportAllData() {
+            const data = {
+                patients: PatientsManager.getAll(),
+                evaluations: EvaluationsManager.getAll(),
+                exams: ExamsManager.getAll(),
+                reports: ReportsManager.getAll()
+            };
+
+            const dataStr = JSON.stringify(data, null, 2);
+            const blob = new Blob([dataStr], { type: 'application/json' });
+            const url = URL.createObjectURL(blob);
+            const a = document.createElement('a');
+            a.href = url;
+            a.download = `neurodiagnostico-backup-${new Date().toISOString().split('T')[0]}.json`;
+            a.click();
+        }
+
+        function clearAllData() {
+            if (confirm('ATENÇÃO: Esta ação removerá todos os dados do sistema. Tem certeza?')) {
+                if (confirm('Esta ação é IRREVERSÍVEL. Deseja continuar?')) {
+                    Storage.clear();
+                    alert('Todos os dados foram removidos. A página será recarregada.');
+                    window.location.reload();
+                }
+            }
+        }
+
+        // Form Submission
+        document.querySelectorAll('.settings-form').forEach(form => {
+            form.addEventListener('submit', function(e) {
+                e.preventDefault();
+                alert('Configurações salvas com sucesso!');
+            });
+        });
+    </script>
+
+    <style>
+        .settings-nav {
+            display: flex;
+            gap: 10px;
+            margin-bottom: 30px;
+            overflow-x: auto;
+            padding-bottom: 10px;
+        }
+
+        .settings-tab {
+            padding: 12px 20px;
+            background: white;
+            border: 2px solid #e0e0e0;
+            border-radius: 10px;
+            cursor: pointer;
+            transition: all 0.3s;
+            white-space: nowrap;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            font-size: 0.95rem;
+        }
+
+        .settings-tab:hover {
+            border-color: #667eea;
+            background: #f8f9ff;
+        }
+
+        .settings-tab.active {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            border-color: transparent;
+        }
+
+        .settings-content {
+            position: relative;
+        }
+
+        .settings-panel {
+            display: none;
+        }
+
+        .settings-panel.active {
+            display: block;
+        }
+
+        .settings-card {
+            background: white;
+            border-radius: 15px;
+            padding: 25px;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.05);
+            margin-bottom: 20px;
+        }
+
+        .settings-card h3 {
+            color: var(--text-primary);
+            margin-bottom: 20px;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            font-size: 1.1rem;
+        }
+
+        .settings-form {
+            display: flex;
+            flex-direction: column;
+            gap: 20px;
+        }
+
+        .form-row {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 20px;
+        }
+
+        .form-group {
+            display: flex;
+            flex-direction: column;
+            gap: 8px;
+        }
+
+        .form-group label {
+            font-size: 0.9rem;
+            color: var(--text-secondary);
+            font-weight: 500;
+        }
+
+        .form-input {
+            padding: 12px 15px;
+            border: 2px solid #e0e0e0;
+            border-radius: 8px;
+            font-size: 0.95rem;
+            transition: border-color 0.3s;
+        }
+
+        .form-input:focus {
+            outline: none;
+            border-color: #667eea;
+        }
+
+        .setting-item {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 15px 0;
+            border-bottom: 1px solid #f0f0f0;
+        }
+
+        .setting-item:last-child {
+            border-bottom: none;
+        }
+
+        .setting-info strong {
+            display: block;
+            color: var(--text-primary);
+            margin-bottom: 5px;
+        }
+
+        .setting-info p {
+            font-size: 0.9rem;
+            color: var(--text-secondary);
+            margin: 0;
+        }
+
+        .toggle-switch {
+            position: relative;
+            width: 50px;
+            height: 26px;
+            display: inline-block;
+        }
+
+        .toggle-switch input {
+            opacity: 0;
+            width: 0;
+            height: 0;
+        }
+
+        .toggle-slider {
+            position: absolute;
+            cursor: pointer;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background-color: #ccc;
+            transition: .4s;
+            border-radius: 26px;
+        }
+
+        .toggle-slider:before {
+            position: absolute;
+            content: "";
+            height: 18px;
+            width: 18px;
+            left: 4px;
+            bottom: 4px;
+            background-color: white;
+            transition: .4s;
+            border-radius: 50%;
+        }
+
+        input:checked + .toggle-slider {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+        }
+
+        input:checked + .toggle-slider:before {
+            transform: translateX(24px);
+        }
+
+        .theme-options {
+            display: grid;
+            grid-template-columns: repeat(3, 1fr);
+            gap: 15px;
+        }
+
+        .theme-option {
+            cursor: pointer;
+            text-align: center;
+            padding: 15px;
+            border: 2px solid #e0e0e0;
+            border-radius: 10px;
+            transition: all 0.3s;
+        }
+
+        .theme-option:hover {
+            border-color: #667eea;
+        }
+
+        .theme-option.active {
+            border-color: #667eea;
+            background: #f8f9ff;
+        }
+
+        .theme-preview {
+            width: 60px;
+            height: 60px;
+            margin: 0 auto 10px;
+            border-radius: 10px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 1.5rem;
+        }
+
+        .theme-preview.light {
+            background: linear-gradient(135deg, #ffeaa7 0%, #fdcb6e 100%);
+            color: #2d3436;
+        }
+
+        .theme-preview.dark {
+            background: linear-gradient(135deg, #2d3436 0%, #000000 100%);
+            color: white;
+        }
+
+        .theme-preview.auto {
+            background: linear-gradient(90deg, #ffeaa7 0%, #ffeaa7 50%, #2d3436 50%, #2d3436 100%);
+            color: #2d3436;
+        }
+
+        .font-size-control {
+            display: flex;
+            gap: 10px;
+        }
+
+        .range-slider {
+            width: 100%;
+            margin: 10px 0;
+        }
+
+        .session-item {
+            display: flex;
+            align-items: center;
+            gap: 15px;
+            padding: 15px;
+            background: #f8f9fa;
+            border-radius: 10px;
+        }
+
+        .session-icon {
+            width: 45px;
+            height: 45px;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            border-radius: 10px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            color: white;
+            font-size: 1.2rem;
+        }
+
+        .session-info {
+            flex: 1;
+        }
+
+        .session-info strong {
+            display: block;
+            margin-bottom: 5px;
+        }
+
+        .session-info small {
+            color: var(--text-secondary);
+        }
+
+        @media (max-width: 768px) {
+            .form-row {
+                grid-template-columns: 1fr;
+            }
+
+            .theme-options {
+                grid-template-columns: 1fr;
+            }
+
+            .settings-nav {
+                flex-wrap: nowrap;
+            }
+        }
+    </style>
+</body>
+</html>

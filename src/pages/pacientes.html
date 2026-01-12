@@ -1,0 +1,284 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Pacientes - NeuroDiagnóstico</title>
+    <link rel="stylesheet" href="../styles/style.css">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
+</head>
+<body>
+    <!-- Menu Toggle Button -->
+    <button class="menu-toggle" id="menuToggle" aria-label="Alternar menu">
+        <i class="fas fa-bars"></i>
+    </button>
+
+    <div class="container">
+        <!-- Sidebar -->
+        <div class="sidebar mobile-hidden" id="sidebar">
+            <div class="logo">
+                <h1>NeuroDiagnóstico</h1>
+            </div>
+            <ul class="nav-links">
+                <li><a href="../../index.html"><i class="fas fa-home"></i> Dashboard</a></li>
+                <li><a href="pacientes.html"><i class="fas fa-user-injured"></i> Pacientes</a></li>
+                <li><a href="avaliacoes.html"><i class="fas fa-brain"></i> Avaliações</a></li>
+                <li><a href="relatorios.html"><i class="fas fa-chart-bar"></i> Relatórios</a></li>
+                <li><a href="configuracoes.html"><i class="fas fa-cog"></i> Configurações</a></li>
+                <li><a href="ajuda.html"><i class="fas fa-question-circle"></i> Ajuda</a></li>
+            </ul>
+        </div>
+
+        <!-- Main Content -->
+        <div class="main-content">
+            <div class="header">
+                <h2>Gerenciamento de Pacientes</h2>
+                <div class="user-info">
+                    <div class="user-avatar">
+                        <img src="https://i.pravatar.cc/150?img=12" alt="Dr. Silva">
+                    </div>
+                    <span>Dr. Silva</span>
+                </div>
+            </div>
+
+            <!-- Search and Filter -->
+            <div class="search-section">
+                <div class="search-bar">
+                    <i class="fas fa-search"></i>
+                    <input type="text" id="searchInput" placeholder="Buscar paciente por nome, CPF ou ID..." class="search-input">
+                </div>
+                <button class="btn btn-primary" id="addPatientBtn">
+                    <i class="fas fa-plus"></i> Novo Paciente
+                </button>
+            </div>
+
+            <!-- Patients Table -->
+            <div class="patients-table">
+                <table>
+                    <thead>
+                        <tr>
+                            <th>ID</th>
+                            <th>Nome</th>
+                            <th>Idade</th>
+                            <th>Última Consulta</th>
+                            <th>Status</th>
+                            <th>Ações</th>
+                        </tr>
+                    </thead>
+                    <tbody id="patientsTableBody">
+                        <tr>
+                            <td>#P-00482</td>
+                            <td>
+                                <div class="patient-cell">
+                                    <div class="patient-avatar-small">MO</div>
+                                    <div>
+                                        <strong>Maria Oliveira</strong>
+                                        <small>CPF: 123.456.789-00</small>
+                                    </div>
+                                </div>
+                            </td>
+                            <td>72 anos</td>
+                            <td>15/03/2023</td>
+                            <td><span class="badge badge-warning">Em Avaliação</span></td>
+                            <td>
+                                <div class="action-btns">
+                                    <button class="btn-icon" title="Ver Detalhes"><i class="fas fa-eye"></i></button>
+                                    <button class="btn-icon" title="Editar"><i class="fas fa-edit"></i></button>
+                                    <button class="btn-icon" title="Histórico"><i class="fas fa-history"></i></button>
+                                </div>
+                            </td>
+                        </tr>
+                        <tr>
+                            <td>#P-00481</td>
+                            <td>
+                                <div class="patient-cell">
+                                    <div class="patient-avatar-small">JS</div>
+                                    <div>
+                                        <strong>João Silva</strong>
+                                        <small>CPF: 987.654.321-00</small>
+                                    </div>
+                                </div>
+                            </td>
+                            <td>68 anos</td>
+                            <td>12/03/2023</td>
+                            <td><span class="badge badge-success">Concluído</span></td>
+                            <td>
+                                <div class="action-btns">
+                                    <button class="btn-icon" title="Ver Detalhes"><i class="fas fa-eye"></i></button>
+                                    <button class="btn-icon" title="Editar"><i class="fas fa-edit"></i></button>
+                                    <button class="btn-icon" title="Histórico"><i class="fas fa-history"></i></button>
+                                </div>
+                            </td>
+                        </tr>
+                        <tr>
+                            <td>#P-00480</td>
+                            <td>
+                                <div class="patient-cell">
+                                    <div class="patient-avatar-small">AS</div>
+                                    <div>
+                                        <strong>Ana Santos</strong>
+                                        <small>CPF: 456.789.123-00</small>
+                                    </div>
+                                </div>
+                            </td>
+                            <td>75 anos</td>
+                            <td>10/03/2023</td>
+                            <td><span class="badge badge-info">Agendado</span></td>
+                            <td>
+                                <div class="action-btns">
+                                    <button class="btn-icon" title="Ver Detalhes"><i class="fas fa-eye"></i></button>
+                                    <button class="btn-icon" title="Editar"><i class="fas fa-edit"></i></button>
+                                    <button class="btn-icon" title="Histórico"><i class="fas fa-history"></i></button>
+                                </div>
+                            </td>
+                        </tr>
+                    </tbody>
+                </table>
+            </div>
+
+            <!-- Pagination -->
+            <div class="pagination">
+                <button class="btn btn-outline btn-sm"><i class="fas fa-chevron-left"></i> Anterior</button>
+                <span class="pagination-info">Página 1 de 10</span>
+                <button class="btn btn-outline btn-sm">Próxima <i class="fas fa-chevron-right"></i></button>
+            </div>
+        </div>
+    </div>
+
+    <script src="../scripts/storage.js"></script>
+    <script src="../scripts/script.js"></script>
+    <script>
+        // Carregar pacientes do localStorage
+        function loadPatients() {
+            const patients = PatientsManager.getAll();
+            const tbody = document.getElementById('patientsTableBody');
+            tbody.innerHTML = '';
+
+            patients.forEach(patient => {
+                const iniciais = patient.nome.split(' ').map(n => n[0]).join('').substring(0, 2).toUpperCase();
+
+                const statusBadge = {
+                    'Em Avaliação': 'badge-warning',
+                    'Concluído': 'badge-success',
+                    'Agendado': 'badge-info',
+                    'Pendente': 'badge-danger'
+                }[patient.status] || 'badge-info';
+
+                const row = document.createElement('tr');
+                row.innerHTML = `
+                    <td>${patient.id}</td>
+                    <td>
+                        <div class="patient-cell">
+                            <div class="patient-avatar-small">${iniciais}</div>
+                            <div>
+                                <strong>${patient.nome}</strong>
+                                <small>CPF: ${patient.cpf}</small>
+                            </div>
+                        </div>
+                    </td>
+                    <td>${patient.idade} anos</td>
+                    <td>${patient.ultimaConsulta}</td>
+                    <td><span class="badge ${statusBadge}">${patient.status}</span></td>
+                    <td>
+                        <div class="action-btns">
+                            <button class="btn-icon" title="Ver Detalhes" onclick="viewPatient('${patient.id}')">
+                                <i class="fas fa-eye"></i>
+                            </button>
+                            <button class="btn-icon" title="Editar" onclick="editPatient('${patient.id}')">
+                                <i class="fas fa-edit"></i>
+                            </button>
+                            <button class="btn-icon" title="Histórico" onclick="viewHistory('${patient.id}')">
+                                <i class="fas fa-history"></i>
+                            </button>
+                        </div>
+                    </td>
+                `;
+                tbody.appendChild(row);
+            });
+        }
+
+        // Busca de pacientes
+        document.getElementById('searchInput').addEventListener('input', function(e) {
+            const searchTerm = e.target.value;
+            if (searchTerm.length >= 2) {
+                const results = PatientsManager.search(searchTerm);
+                renderSearchResults(results);
+            } else {
+                loadPatients();
+            }
+        });
+
+        function renderSearchResults(patients) {
+            const tbody = document.getElementById('patientsTableBody');
+            tbody.innerHTML = '';
+
+            if (patients.length === 0) {
+                tbody.innerHTML = '<tr><td colspan="6" style="text-align:center;">Nenhum paciente encontrado</td></tr>';
+                return;
+            }
+
+            patients.forEach(patient => {
+                const iniciais = patient.nome.split(' ').map(n => n[0]).join('').substring(0, 2).toUpperCase();
+                const statusBadge = {
+                    'Em Avaliação': 'badge-warning',
+                    'Concluído': 'badge-success',
+                    'Agendado': 'badge-info',
+                    'Pendente': 'badge-danger'
+                }[patient.status] || 'badge-info';
+
+                const row = document.createElement('tr');
+                row.innerHTML = `
+                    <td>${patient.id}</td>
+                    <td>
+                        <div class="patient-cell">
+                            <div class="patient-avatar-small">${iniciais}</div>
+                            <div>
+                                <strong>${patient.nome}</strong>
+                                <small>CPF: ${patient.cpf}</small>
+                            </div>
+                        </div>
+                    </td>
+                    <td>${patient.idade} anos</td>
+                    <td>${patient.ultimaConsulta}</td>
+                    <td><span class="badge ${statusBadge}">${patient.status}</span></td>
+                    <td>
+                        <div class="action-btns">
+                            <button class="btn-icon" title="Ver Detalhes" onclick="viewPatient('${patient.id}')">
+                                <i class="fas fa-eye"></i>
+                            </button>
+                            <button class="btn-icon" title="Editar" onclick="editPatient('${patient.id}')">
+                                <i class="fas fa-edit"></i>
+                            </button>
+                            <button class="btn-icon" title="Histórico" onclick="viewHistory('${patient.id}')">
+                                <i class="fas fa-history"></i>
+                            </button>
+                        </div>
+                    </td>
+                `;
+                tbody.appendChild(row);
+            });
+        }
+
+        // Funções de ação
+        function viewPatient(id) {
+            window.location.href = `index.html?patient=${id}`;
+        }
+
+        function editPatient(id) {
+            alert(`Editar paciente ${id}\n\nFuncionalidade será implementada em breve`);
+        }
+
+        function viewHistory(id) {
+            alert(`Visualizar histórico do paciente ${id}\n\nFuncionalidade será implementada em breve`);
+        }
+
+        // Adicionar paciente
+        document.getElementById('addPatientBtn').addEventListener('click', function() {
+            alert('Funcionalidade de adicionar paciente será implementada em breve');
+        });
+
+        // Carregar pacientes ao iniciar
+        loadPatients();
+    </script>
+</body>
+</html>
