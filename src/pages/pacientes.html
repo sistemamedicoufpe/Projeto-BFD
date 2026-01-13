@@ -694,7 +694,7 @@
             const timelineHTML = document.getElementById('historyTimeline').innerHTML;
 
             const printWindow = window.open('', '_blank');
-            printWindow.document.write(`
+            const htmlContent = `
                 <!DOCTYPE html>
                 <html>
                 <head>
@@ -723,10 +723,11 @@
                         window.onload = function() {
                             window.print();
                         }
-                    <\/script>
+                    </script>
                 </body>
                 </html>
-            `);
+            `;
+            printWindow.document.write(htmlContent);
             printWindow.document.close();
         }
 
