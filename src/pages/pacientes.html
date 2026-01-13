@@ -230,6 +230,42 @@
         </div>
     </div>
 
+    <!-- Patient History Modal -->
+    <div id="historyModal" class="modal">
+        <div class="modal-content modal-lg">
+            <div class="modal-header">
+                <h3><i class="fas fa-history"></i> Histórico do Paciente</h3>
+                <button class="close-btn" onclick="closeHistoryModal()">
+                    <i class="fas fa-times"></i>
+                </button>
+            </div>
+            <div class="modal-body">
+                <div class="history-patient-info">
+                    <div class="history-patient-header">
+                        <div class="history-patient-avatar" id="historyPatientAvatar">MO</div>
+                        <div class="history-patient-data">
+                            <h3 id="historyPatientName">Carregando...</h3>
+                            <p id="historyPatientDetails">ID: - | CPF: - | Idade: -</p>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Timeline de Histórico -->
+                <div class="history-timeline" id="historyTimeline">
+                    <p style="text-align: center; color: var(--text-secondary); padding: 40px;">
+                        Carregando histórico...
+                    </p>
+                </div>
+            </div>
+            <div class="modal-footer">
+                <button class="btn btn-outline" onclick="closeHistoryModal()">Fechar</button>
+                <button class="btn btn-primary" onclick="printHistory()">
+                    <i class="fas fa-print"></i> Imprimir Histórico
+                </button>
+            </div>
+        </div>
+    </div>
+
     <!-- Add Patient Modal -->
     <div id="addPatientModal" class="modal">
         <div class="modal-content">
@@ -418,11 +454,28 @@
         // Variável para armazenar o ID do paciente sendo visualizado
         let currentViewingPatientId = null;
 
+        // Sistema de notificações
+        function showNotification(message, type = 'info') {
+            const notification = document.createElement('div');
+            notification.className = `notification notification-${type}`;
+            notification.innerHTML = `
+                <i class="fas fa-${type === 'success' ? 'check-circle' : type === 'error' ? 'exclamation-circle' : 'info-circle'}"></i>
+                <span>${message}</span>
+            `;
+            document.body.appendChild(notification);
+
+            setTimeout(() => notification.classList.add('show'), 10);
+            setTimeout(() => {
+                notification.classList.remove('show');
+                setTimeout(() => notification.remove(), 300);
+            }, 3000);
+        }
+
         // Funções de ação
         function viewPatient(id) {
             const patient = PatientsManager.getById(id);
             if (!patient) {
-                alert('Paciente não encontrado');
+                showNotification('Paciente não encontrado', 'error');
                 return;
             }
 
@@ -511,15 +564,199 @@
 
         function viewHistory(id) {
             const patient = PatientsManager.getById(id);
-            if (patient) {
-                const evaluations = EvaluationsManager.getAll().filter(e => e.patientId === id);
-                const exams = ExamsManager.getAll().filter(e => e.patientId === id);
-
-                alert(`Histórico de ${patient.nome}:\n\n` +
-                      `Avaliações: ${evaluations.length}\n` +
-                      `Exames: ${exams.length}\n\n` +
-                      `Visualização detalhada em desenvolvimento`);
+            if (!patient) {
+                showNotification('Paciente não encontrado', 'error');
+                return;
             }
+
+            // Preencher informações do paciente
+            const iniciais = patient.nome.split(' ').map(n => n[0]).join('').substring(0, 2).toUpperCase();
+            document.getElementById('historyPatientAvatar').textContent = iniciais;
+            document.getElementById('historyPatientName').textContent = patient.nome;
+            document.getElementById('historyPatientDetails').textContent =
+                `ID: ${patient.id} | CPF: ${patient.cpf} | Idade: ${patient.idade} anos`;
+
+            // Buscar histórico
+            const evaluations = EvaluationsManager.getAll().filter(e => e.patientId === id);
+            const exams = ExamsManager.getAll().filter(e => e.patientId === id);
+            const reports = ReportsManager.getAll().filter(r => r.patientId === id);
+
+            // Criar timeline combinada
+            const timeline = [];
+
+            // Adicionar avaliações
+            evaluations.forEach(eval => {
+                timeline.push({
+                    date: eval.date,
+                    type: 'evaluation',
+                    icon: 'fa-brain',
+                    color: '#667eea',
+                    title: getEvaluationTypeName(eval.type),
+                    status: eval.status,
+                    details: `Status: ${eval.status}${eval.aiAssisted ? ' | IA Assistida' : ''}`,
+                    data: eval
+                });
+            });
+
+            // Adicionar exames
+            exams.forEach(exam => {
+                timeline.push({
+                    date: exam.date,
+                    type: 'exam',
+                    icon: 'fa-file-medical',
+                    color: '#3498db',
+                    title: exam.type || 'Exame',
+                    status: exam.status || 'Concluído',
+                    details: exam.description || 'Sem descrição',
+                    data: exam
+                });
+            });
+
+            // Adicionar relatórios
+            reports.forEach(report => {
+                timeline.push({
+                    date: report.date,
+                    type: 'report',
+                    icon: 'fa-file-alt',
+                    color: '#27ae60',
+                    title: report.type || 'Relatório',
+                    status: report.status || 'Concluído',
+                    details: report.summary || 'Relatório gerado',
+                    data: report
+                });
+            });
+
+            // Ordenar por data (mais recente primeiro)
+            timeline.sort((a, b) => new Date(b.date) - new Date(a.date));
+
+            // Renderizar timeline
+            const timelineContainer = document.getElementById('historyTimeline');
+
+            if (timeline.length === 0) {
+                timelineContainer.innerHTML = `
+                    <div style="text-align: center; padding: 40px; color: var(--text-secondary);">
+                        <i class="fas fa-inbox" style="font-size: 3rem; margin-bottom: 15px; display: block;"></i>
+                        <p style="font-size: 1.1rem; margin: 0;">Nenhum registro no histórico</p>
+                        <p style="font-size: 0.9rem; margin: 10px 0 0 0;">
+                            Avaliações e exames realizados aparecerão aqui
+                        </p>
+                    </div>
+                `;
+            } else {
+                timelineContainer.innerHTML = `
+                    <div class="history-summary">
+                        <div class="summary-stat">
+                            <i class="fas fa-brain"></i>
+                            <span>${evaluations.length} Avaliações</span>
+                        </div>
+                        <div class="summary-stat">
+                            <i class="fas fa-file-medical"></i>
+                            <span>${exams.length} Exames</span>
+                        </div>
+                        <div class="summary-stat">
+                            <i class="fas fa-file-alt"></i>
+                            <span>${reports.length} Relatórios</span>
+                        </div>
+                    </div>
+                    ${timeline.map(item => `
+                        <div class="timeline-item">
+                            <div class="timeline-marker" style="background: ${item.color};">
+                                <i class="fas ${item.icon}"></i>
+                            </div>
+                            <div class="timeline-content">
+                                <div class="timeline-header">
+                                    <h4>${item.title}</h4>
+                                    <span class="timeline-date">
+                                        <i class="fas fa-calendar"></i>
+                                        ${formatDate(item.date)}
+                                    </span>
+                                </div>
+                                <p class="timeline-details">${item.details}</p>
+                                <span class="badge badge-${getStatusBadgeClass(item.status)}">${item.status}</span>
+                            </div>
+                        </div>
+                    `).join('')}
+                `;
+            }
+
+            // Abrir modal
+            document.getElementById('historyModal').style.display = 'flex';
+        }
+
+        function closeHistoryModal() {
+            document.getElementById('historyModal').style.display = 'none';
+        }
+
+        function printHistory() {
+            // Criar uma janela de impressão do histórico
+            const patient = document.getElementById('historyPatientName').textContent;
+            const details = document.getElementById('historyPatientDetails').textContent;
+            const timelineHTML = document.getElementById('historyTimeline').innerHTML;
+
+            const printWindow = window.open('', '_blank');
+            printWindow.document.write(`
+                <!DOCTYPE html>
+                <html>
+                <head>
+                    <title>Histórico do Paciente - ${patient}</title>
+                    <style>
+                        body { font-family: Arial, sans-serif; padding: 20px; }
+                        h1 { color: #667eea; }
+                        .header { margin-bottom: 30px; }
+                        .timeline-item { margin-bottom: 20px; padding: 15px; border: 1px solid #ddd; border-radius: 8px; }
+                        .timeline-marker { display: inline-block; margin-right: 10px; }
+                        @media print {
+                            body { padding: 10px; }
+                            .no-print { display: none; }
+                        }
+                    </style>
+                </head>
+                <body>
+                    <div class="header">
+                        <h1>🧠 NeuroDiagnóstico</h1>
+                        <h2>Histórico do Paciente</h2>
+                        <p><strong>${patient}</strong></p>
+                        <p>${details}</p>
+                    </div>
+                    ${timelineHTML}
+                    <script>
+                        window.onload = function() {
+                            window.print();
+                        }
+                    </script>
+                </body>
+                </html>
+            `);
+            printWindow.document.close();
+        }
+
+        function getEvaluationTypeName(type) {
+            const types = {
+                'cognitive': 'Avaliação Cognitiva',
+                'neurological': 'Avaliação Neurológica',
+                'imaging': 'Exame de Imagem',
+                'lab': 'Exame Laboratorial'
+            };
+            return types[type] || 'Avaliação';
+        }
+
+        function formatDate(dateStr) {
+            const date = new Date(dateStr);
+            if (isNaN(date.getTime())) {
+                return dateStr; // Se não for uma data válida, retornar string original
+            }
+            return date.toLocaleDateString('pt-BR', { day: '2-digit', month: 'short', year: 'numeric' });
+        }
+
+        function getStatusBadgeClass(status) {
+            const badges = {
+                'Concluída': 'success',
+                'Concluído': 'success',
+                'Em Avaliação': 'warning',
+                'Pendente': 'danger',
+                'Agendado': 'info'
+            };
+            return badges[status] || 'info';
         }
 
         // Modal de adicionar paciente
@@ -542,7 +779,7 @@
                 const form = document.getElementById('addPatientForm');
 
                 if (!form.checkValidity()) {
-                    alert('Por favor, preencha todos os campos obrigatórios');
+                    showNotification('Por favor, preencha todos os campos obrigatórios', 'error');
                     return;
                 }
 
@@ -559,35 +796,35 @@
 
                 // Validação adicional
                 if (!patientData.nome || patientData.nome.length < 3) {
-                    alert('Nome deve ter pelo menos 3 caracteres');
+                    showNotification('Nome deve ter pelo menos 3 caracteres', 'error');
                     return;
                 }
 
                 if (!patientData.cpf || patientData.cpf.length < 11) {
-                    alert('CPF inválido');
+                    showNotification('CPF inválido', 'error');
                     return;
                 }
 
                 if (patientData.idade < 18 || patientData.idade > 120) {
-                    alert('Idade deve estar entre 18 e 120 anos');
+                    showNotification('Idade deve estar entre 18 e 120 anos', 'error');
                     return;
                 }
 
                 if (editingId) {
                     // Atualizar paciente existente
                     PatientsManager.update(editingId, patientData);
-                    alert('Paciente atualizado com sucesso!');
+                    showNotification('Paciente atualizado com sucesso!', 'success');
                 } else {
                     // Adicionar novo paciente
                     PatientsManager.add(patientData);
-                    alert('Paciente cadastrado com sucesso!');
+                    showNotification('Paciente cadastrado com sucesso!', 'success');
                 }
 
                 closeAddPatientModal();
                 loadPatients();
             } catch (error) {
                 console.error('Erro ao salvar paciente:', error);
-                alert('Erro ao salvar paciente: ' + error.message);
+                showNotification('Erro ao salvar paciente: ' + error.message, 'error');
             }
         }
 
@@ -595,12 +832,16 @@
         window.onclick = function(event) {
             const addModal = document.getElementById('addPatientModal');
             const viewModal = document.getElementById('viewPatientModal');
-            
+            const historyModal = document.getElementById('historyModal');
+
             if (event.target === addModal) {
                 closeAddPatientModal();
             }
             if (event.target === viewModal) {
                 closeViewPatientModal();
+            }
+            if (event.target === historyModal) {
+                closeHistoryModal();
             }
         }
 
@@ -610,6 +851,65 @@
     </script>
 
     <style>
+        /* Sistema de Notificações */
+        .notification {
+            position: fixed;
+            top: 20px;
+            right: 20px;
+            background: white;
+            padding: 15px 20px;
+            border-radius: 10px;
+            box-shadow: 0 5px 20px rgba(0,0,0,0.2);
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            z-index: 10000;
+            opacity: 0;
+            transform: translateX(400px);
+            transition: all 0.3s ease;
+            min-width: 300px;
+            max-width: 400px;
+        }
+
+        .notification.show {
+            opacity: 1;
+            transform: translateX(0);
+        }
+
+        .notification i {
+            font-size: 1.3rem;
+        }
+
+        .notification-success {
+            border-left: 4px solid #27ae60;
+        }
+
+        .notification-success i {
+            color: #27ae60;
+        }
+
+        .notification-error {
+            border-left: 4px solid #e74c3c;
+        }
+
+        .notification-error i {
+            color: #e74c3c;
+        }
+
+        .notification-info {
+            border-left: 4px solid #3498db;
+        }
+
+        .notification-info i {
+            color: #3498db;
+        }
+
+        .notification span {
+            color: var(--text-primary);
+            font-size: 0.95rem;
+            flex: 1;
+        }
+
         .modal {
             display: none;
             position: fixed;
@@ -839,6 +1139,193 @@
 
             .details-section {
                 padding: 15px;
+            }
+        }
+
+        /* Estilos do Modal de Histórico */
+        .history-patient-info {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            padding: 25px;
+            border-radius: 12px;
+            margin-bottom: 25px;
+            color: white;
+        }
+
+        .history-patient-header {
+            display: flex;
+            align-items: center;
+            gap: 20px;
+        }
+
+        .history-patient-avatar {
+            width: 80px;
+            height: 80px;
+            background: rgba(255, 255, 255, 0.2);
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 1.8rem;
+            font-weight: bold;
+            color: white;
+            border: 3px solid rgba(255, 255, 255, 0.3);
+            flex-shrink: 0;
+        }
+
+        .history-patient-data h3 {
+            margin: 0 0 8px 0;
+            font-size: 1.5rem;
+            color: white;
+        }
+
+        .history-patient-data p {
+            margin: 0;
+            font-size: 0.9rem;
+            opacity: 0.9;
+        }
+
+        .history-summary {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
+            gap: 15px;
+            margin-bottom: 25px;
+            padding: 20px;
+            background: #f8f9fa;
+            border-radius: 10px;
+        }
+
+        .summary-stat {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            padding: 12px;
+            background: white;
+            border-radius: 8px;
+            box-shadow: 0 2px 6px rgba(0,0,0,0.05);
+        }
+
+        .summary-stat i {
+            font-size: 1.5rem;
+            color: var(--primary);
+        }
+
+        .summary-stat span {
+            font-size: 0.95rem;
+            color: var(--text-primary);
+            font-weight: 500;
+        }
+
+        .history-timeline {
+            position: relative;
+            padding-left: 40px;
+            margin-top: 20px;
+        }
+
+        .history-timeline::before {
+            content: '';
+            position: absolute;
+            left: 20px;
+            top: 0;
+            bottom: 0;
+            width: 3px;
+            background: linear-gradient(to bottom, #667eea, #764ba2);
+            border-radius: 2px;
+        }
+
+        .timeline-item {
+            position: relative;
+            margin-bottom: 30px;
+            padding-left: 20px;
+        }
+
+        .timeline-marker {
+            position: absolute;
+            left: -28px;
+            top: 0;
+            width: 40px;
+            height: 40px;
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            color: white;
+            font-size: 1rem;
+            box-shadow: 0 3px 10px rgba(0,0,0,0.15);
+            border: 4px solid white;
+        }
+
+        .timeline-content {
+            background: white;
+            border: 2px solid #e0e0e0;
+            border-radius: 12px;
+            padding: 20px;
+            transition: all 0.3s ease;
+        }
+
+        .timeline-content:hover {
+            border-color: var(--primary);
+            box-shadow: 0 5px 20px rgba(102, 126, 234, 0.15);
+            transform: translateY(-2px);
+        }
+
+        .timeline-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 12px;
+            flex-wrap: wrap;
+            gap: 10px;
+        }
+
+        .timeline-header h4 {
+            margin: 0;
+            color: var(--text-primary);
+            font-size: 1.1rem;
+        }
+
+        .timeline-date {
+            display: flex;
+            align-items: center;
+            gap: 6px;
+            color: var(--text-secondary);
+            font-size: 0.85rem;
+        }
+
+        .timeline-details {
+            margin: 0 0 12px 0;
+            color: var(--text-secondary);
+            font-size: 0.95rem;
+            line-height: 1.5;
+        }
+
+        @media (max-width: 768px) {
+            .history-patient-header {
+                flex-direction: column;
+                text-align: center;
+            }
+
+            .history-summary {
+                grid-template-columns: 1fr;
+            }
+
+            .history-timeline {
+                padding-left: 30px;
+            }
+
+            .history-timeline::before {
+                left: 15px;
+            }
+
+            .timeline-marker {
+                left: -23px;
+                width: 35px;
+                height: 35px;
+                font-size: 0.9rem;
+            }
+
+            .timeline-header {
+                flex-direction: column;
+                align-items: flex-start;
             }
         }
     </style>
