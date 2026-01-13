@@ -151,7 +151,7 @@
             </div>
             <div class="modal-footer">
                 <button class="btn btn-outline" onclick="closeEvaluationModal()">Fechar</button>
-                <button class="btn btn-primary" onclick="editEvaluation()">
+                <button class="btn btn-primary" onclick="editEvaluation(currentViewingEvaluationId)">
                     <i class="fas fa-edit"></i> Editar
                 </button>
             </div>
@@ -166,6 +166,7 @@
         let allEvaluations = [];
         let filteredEvaluations = [];
         let currentFilter = 'all';
+        let currentViewingEvaluationId = null;  // Armazenar ID da avaliação sendo visualizada
 
         // Carregar informações do usuário
         function loadUserInfo() {
@@ -366,6 +367,8 @@
                 return;
             }
 
+            currentViewingEvaluationId = evaluationId;  // Armazenar ID atual
+
             const patient = PatientsManager.getById(evaluation.patientId);
             const patientName = patient ? patient.nome : 'Paciente Desconhecido';
 
@@ -431,6 +434,7 @@
         // Modal
         function closeEvaluationModal() {
             document.getElementById('evaluationModal').style.display = 'none';
+            currentViewingEvaluationId = null;  // Limpar ID ao fechar
         }
 
         function editEvaluation(evaluationId) {
