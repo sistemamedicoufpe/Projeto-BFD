@@ -527,21 +527,25 @@
                     return;
                 }
 
-            const reportData = {
-                id: 'REP-' + Date.now(),
-                type: reportType,
-                patientId: document.getElementById('reportPatient').value,
-                startDate: document.getElementById('reportStartDate').value,
-                endDate: document.getElementById('reportEndDate').value,
-                includeAI: document.getElementById('includeAI').checked,
-                date: new Date().toLocaleDateString('pt-BR'),
-                status: 'Concluído'
-            };
+                const reportData = {
+                    id: 'REP-' + Date.now(),
+                    type: reportType,
+                    patientId: document.getElementById('reportPatient').value,
+                    startDate: document.getElementById('reportStartDate').value,
+                    endDate: document.getElementById('reportEndDate').value,
+                    includeAI: document.getElementById('includeAI').checked,
+                    date: new Date().toLocaleDateString('pt-BR'),
+                    status: 'Concluído'
+                };
 
-            ReportsManager.add(reportData);
-            alert('Relatório gerado com sucesso!');
-            closeGenerateModal();
-            loadReportsData();
+                ReportsManager.add(reportData);
+                alert('Relatório gerado com sucesso!');
+                closeGenerateModal();
+                loadReportsData();
+            } catch (error) {
+                console.error('Erro ao gerar relatório:', error);
+                alert('Erro ao gerar relatório: ' + error.message);
+            }
         }
 
         // Mostrar/ocultar seleção de paciente
