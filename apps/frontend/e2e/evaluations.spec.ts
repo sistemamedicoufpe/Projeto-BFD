@@ -9,8 +9,6 @@ import {
 } from './fixtures/helpers';
 
 test.describe('Avaliações Neurológicas', () => {
-  let patientId: string;
-
   test.beforeEach(async ({ page }) => {
     await login(page);
 
@@ -24,9 +22,7 @@ test.describe('Avaliações Neurológicas', () => {
 
     await page.click('button[type="submit"]:has-text("Salvar")');
 
-    const response = await responsePromise;
-    const data = await response.json();
-    patientId = data.id;
+    await responsePromise;
 
     await page.waitForURL('/pacientes');
   });

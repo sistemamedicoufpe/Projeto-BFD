@@ -10,20 +10,15 @@ import {
 } from './fixtures/helpers';
 
 test.describe('Relatórios e PDF', () => {
-  let patientId: string;
-  let evaluationId: string;
-
   test.beforeEach(async ({ page }) => {
     await login(page);
 
     // Criar paciente
     await page.goto('/pacientes/novo');
     await fillPatientForm(page, testPatient);
-    const patientResponse = await page.waitForResponse(
+    await page.waitForResponse(
       response => response.url().includes('/patients') && response.status() === 201
     );
-    const patientData = await patientResponse.json();
-    patientId = patientData.id;
     await page.waitForURL('/pacientes');
 
     // Criar avaliação com MMSE
@@ -44,15 +39,11 @@ test.describe('Relatórios e PDF', () => {
     await page.fill('textarea[name="hipoteseDiagnostica"]', testEvaluation.hipoteseDiagnostica);
     await page.fill('input[name="cid10"]', testEvaluation.cid10);
 
-    const evaluationResponse = await page.waitForResponse(
+    await page.waitForResponse(
       response => response.url().includes('/evaluations') && response.status() === 201
     );
 
     await page.click('button:has-text("Finalizar Avaliação")');
-
-    const evaluationData = await evaluationResponse.json();
-    evaluationId = evaluationData.id;
-
     await page.waitForURL('/avaliacoes');
   });
 

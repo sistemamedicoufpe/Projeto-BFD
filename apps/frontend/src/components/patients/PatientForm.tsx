@@ -1,8 +1,8 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useCallback } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { Button, Input, Card, CardHeader, CardContent } from '@/components/ui';
 import { patientsApi } from '../../services/api';
-import type { Patient, Gender } from '@neurocare/shared-types';
+import type { Gender } from '@neurocare/shared-types';
 
 interface PatientFormProps {
   patientId?: string;
@@ -57,16 +57,11 @@ export function PatientForm({ patientId, onSuccess, onCancel }: PatientFormProps
     observacoes: '',
   });
 
-  useEffect(() => {
-    if (patientId) {
-      loadPatient();
-    }
-  }, [patientId]);
-
-  const loadPatient = async () => {
+  const loadPatient = useCallback(async () => {
+    if (!patientId) return;
     try {
       setLoadingData(true);
-      const patient = await patientsApi.getById(patientId!);
+      const patient = await patientsApi.getById(patientId);
 
       setFormData({
         nome: patient.nome || '',
@@ -90,13 +85,19 @@ export function PatientForm({ patientId, onSuccess, onCancel }: PatientFormProps
         telefoneResponsavel: patient.telefoneResponsavel || '',
         observacoes: patient.observacoes || '',
       });
-    } catch (err: any) {
+    } catch (err: unknown) {
       console.error('Erro ao carregar paciente:', err);
       setError('Erro ao carregar dados do paciente.');
     } finally {
       setLoadingData(false);
     }
-  };
+  }, [patientId]);
+
+  useEffect(() => {
+    if (patientId) {
+      loadPatient();
+    }
+  }, [patientId, loadPatient]);
 
   const handleChange = (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement | HTMLSelectElement>) => {
     const { name, value } = e.target;
@@ -176,12 +177,12 @@ export function PatientForm({ patientId, onSuccess, onCancel }: PatientFormProps
       } else {
         navigate('/pacientes');
       }
-    } catch (err: any) {
+    } catch (err: unknown) {
       console.error('Erro ao salvar paciente:', err);
-      const errorMessage =
-        err?.response?.data?.message ||
-        err?.message ||
-        'Erro ao salvar paciente. Tente novamente.';
+      let errorMessage = 'Erro ao salvar paciente. Tente novamente.';
+      if (err instanceof Error) {
+        errorMessage = err.message;
+      }
       setError(errorMessage);
     } finally {
       setLoading(false);

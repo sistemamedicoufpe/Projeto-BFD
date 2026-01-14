@@ -26,6 +26,7 @@ export function ClockDrawingTest({ onComplete, onCancel }: ClockDrawingTestProps
   const canvasRef = useRef<HTMLCanvasElement>(null);
   const [isDrawing, setIsDrawing] = useState(false);
   const [step, setStep] = useState<'instructions' | 'drawing' | 'scoring'>('instructions');
+  const [drawingData, setDrawingData] = useState<string>('');
   const [scores, setScores] = useState({
     contour: false,
     numbers: false,
@@ -105,6 +106,11 @@ export function ClockDrawingTest({ onComplete, onCancel }: ClockDrawingTestProps
   };
 
   const handleFinishDrawing = () => {
+    // Capture drawing data before transitioning to scoring
+    const canvas = canvasRef.current;
+    if (canvas) {
+      setDrawingData(canvas.toDataURL('image/png'));
+    }
     setStep('scoring');
   };
 
@@ -129,17 +135,13 @@ export function ClockDrawingTest({ onComplete, onCancel }: ClockDrawingTestProps
       interpretation = 'Grave comprometimento visuoespacial/executivo';
     }
 
-    // Get canvas image as base64
-    const canvas = canvasRef.current;
-    const drawingData = canvas ? canvas.toDataURL('image/png') : '';
-
     return {
       score: totalScore,
       maxScore,
       percentage,
       interpretation,
       criteria: scores,
-      drawingData,
+      drawingData, // Use stored drawing data
       completedAt: new Date().toISOString(),
     };
   };

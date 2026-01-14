@@ -342,7 +342,7 @@ test.describe('Funcionalidade Offline', () => {
     expect(syncQueueCount).toBe(0);
   });
 
-  test('deve funcionar PWA quando instalado', async ({ page, context }) => {
+  test('deve funcionar PWA quando instalado', async ({ page, context: _context }) => {
     // Navegar para o app
     await page.goto('/');
 

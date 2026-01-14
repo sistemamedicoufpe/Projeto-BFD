@@ -1,4 +1,4 @@
-import { useEffect, useState } from 'react';
+import { useEffect, useState, useRef, useCallback } from 'react';
 import { useOnlineStatus } from '../../hooks/useOnlineStatus';
 import { syncService } from '../../services/sync/sync.service';
 
@@ -14,19 +14,33 @@ export function OnlineStatusIndicator() {
     isSyncing: false,
   });
   const [showBanner, setShowBanner] = useState(false);
+  const prevOnlineRef = useRef(isOnline);
+  const timerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
 
-  useEffect(() => {
+  const handleBannerVisibility = useCallback(() => {
     // Show banner when going offline or coming back online
     if (!isOnline || wasOffline) {
       setShowBanner(true);
 
       // Auto-hide after 5 seconds when online
       if (isOnline && wasOffline) {
-        const timer = setTimeout(() => setShowBanner(false), 5000);
-        return () => clearTimeout(timer);
+        if (timerRef.current) clearTimeout(timerRef.current);
+        timerRef.current = setTimeout(() => setShowBanner(false), 5000);
       }
     }
   }, [isOnline, wasOffline]);
+
+  useEffect(() => {
+    // Only trigger when online status changes
+    if (prevOnlineRef.current !== isOnline) {
+      prevOnlineRef.current = isOnline;
+      handleBannerVisibility();
+    }
+
+    return () => {
+      if (timerRef.current) clearTimeout(timerRef.current);
+    };
+  }, [isOnline, handleBannerVisibility]);
 
   useEffect(() => {
     // Update sync status

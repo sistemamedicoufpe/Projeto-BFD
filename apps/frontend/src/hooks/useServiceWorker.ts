@@ -1,4 +1,4 @@
-import { useEffect, useState } from 'react';
+import { useEffect, useState, useCallback } from 'react';
 
 interface ServiceWorkerState {
   isSupported: boolean;
@@ -15,23 +15,16 @@ export function useServiceWorker() {
     registration: null,
   });
 
-  useEffect(() => {
-    if (!state.isSupported) {
-      console.log('Service Workers are not supported');
-      return;
+  const handleMessage = useCallback((event: MessageEvent) => {
+    console.log('Message from service worker:', event.data);
+
+    if (event.data && event.data.type === 'SYNC_REQUEST') {
+      // Trigger sync in the app
+      window.dispatchEvent(new CustomEvent('sw-sync-request'));
     }
-
-    registerServiceWorker();
-
-    // Listen for service worker messages
-    navigator.serviceWorker.addEventListener('message', handleMessage);
-
-    return () => {
-      navigator.serviceWorker.removeEventListener('message', handleMessage);
-    };
   }, []);
 
-  const registerServiceWorker = async () => {
+  const registerServiceWorker = useCallback(async () => {
     try {
       const registration = await navigator.serviceWorker.register('/service-worker.js');
 
@@ -70,16 +63,23 @@ export function useServiceWorker() {
     } catch (error) {
       console.error('Service Worker registration failed:', error);
     }
-  };
+  }, []);
 
-  const handleMessage = (event: MessageEvent) => {
-    console.log('Message from service worker:', event.data);
-
-    if (event.data && event.data.type === 'SYNC_REQUEST') {
-      // Trigger sync in the app
-      window.dispatchEvent(new CustomEvent('sw-sync-request'));
+  useEffect(() => {
+    if (!state.isSupported) {
+      console.log('Service Workers are not supported');
+      return;
     }
-  };
+
+    registerServiceWorker();
+
+    // Listen for service worker messages
+    navigator.serviceWorker.addEventListener('message', handleMessage);
+
+    return () => {
+      navigator.serviceWorker.removeEventListener('message', handleMessage);
+    };
+  }, [state.isSupported, registerServiceWorker, handleMessage]);
 
   const updateServiceWorker = () => {
     if (state.registration && state.registration.waiting) {

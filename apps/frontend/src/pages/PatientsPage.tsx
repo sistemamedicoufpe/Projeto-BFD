@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useCallback } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { Layout } from '@/components/layout';
 import { Card, CardHeader, CardContent, Button, Input } from '@/components/ui';
@@ -14,30 +14,22 @@ export function PatientsPage() {
   const [searchQuery, setSearchQuery] = useState('');
   const [deleting, setDeleting] = useState<string | null>(null);
 
-  useEffect(() => {
-    loadPatients();
-  }, []);
-
-  useEffect(() => {
-    filterPatients();
-  }, [searchQuery, patients]);
-
-  const loadPatients = async () => {
+  const loadPatients = useCallback(async () => {
     try {
       setLoading(true);
       setError(null);
       const data = await patientsApi.getAll();
       setPatients(data);
       setFilteredPatients(data);
-    } catch (err: any) {
+    } catch (err: unknown) {
       console.error('Erro ao carregar pacientes:', err);
       setError('Erro ao carregar pacientes. Tente novamente.');
     } finally {
       setLoading(false);
     }
-  };
+  }, []);
 
-  const filterPatients = () => {
+  const filterPatients = useCallback(() => {
     if (!searchQuery.trim()) {
       setFilteredPatients(patients);
       return;
@@ -50,7 +42,15 @@ export function PatientsPage() {
         patient.cpf.includes(query)
     );
     setFilteredPatients(filtered);
-  };
+  }, [searchQuery, patients]);
+
+  useEffect(() => {
+    loadPatients();
+  }, [loadPatients]);
+
+  useEffect(() => {
+    filterPatients();
+  }, [filterPatients]);
 
   const handleDelete = async (id: string) => {
     if (!confirm('Tem certeza que deseja excluir este paciente?')) {
@@ -61,7 +61,7 @@ export function PatientsPage() {
       setDeleting(id);
       await patientsApi.delete(id);
       await loadPatients();
-    } catch (err: any) {
+    } catch (err: unknown) {
       console.error('Erro ao excluir paciente:', err);
       alert('Erro ao excluir paciente. Tente novamente.');
     } finally {

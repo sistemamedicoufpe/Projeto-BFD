@@ -2,7 +2,7 @@ import { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { Layout } from '@/components/layout';
 import { Card, CardHeader, CardContent, Button, Input } from '@/components/ui';
-import { evaluationsApi, patientsApi } from '../services/api';
+import { evaluationsApi } from '../services/api';
 import type { Evaluation, Patient } from '@neurocare/shared-types';
 
 interface EvaluationWithPatient extends Evaluation {
