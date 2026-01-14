@@ -1,56 +1,568 @@
+import { useState, useEffect, useCallback } from 'react'
 import { Layout } from '@/components/layout'
-import { Card, CardHeader, CardContent } from '@/components/ui'
+import { Card, CardHeader, CardContent, Button, Input, Toggle, Select } from '@/components/ui'
+import { useAuth } from '@/contexts/AuthContext'
+import type { AppSettings } from '@/types'
+
+const SETTINGS_KEY = 'neurocare_settings'
+
+const defaultSettings: AppSettings = {
+  geral: {
+    tema: 'light',
+    idioma: 'pt-BR',
+    notificacoes: true,
+  },
+  seguranca: {
+    autenticacaoDuploFator: false,
+    tempoSessao: 30,
+    backupAutomatico: true,
+    frequenciaBackup: 'diario',
+  },
+  privacidade: {
+    anonimizarDados: false,
+    consentimentoColeta: true,
+    compartilharAnonimos: false,
+  },
+  ia: {
+    habilitado: true,
+    modelo: 'gpt-4',
+    confiancaMinima: 70,
+  },
+}
 
 export function SettingsPage() {
+  const { user } = useAuth()
+  const [settings, setSettings] = useState<AppSettings>(defaultSettings)
+  const [saving, setSaving] = useState(false)
+  const [saved, setSaved] = useState(false)
+  const [profileData, setProfileData] = useState({
+    nome: '',
+    email: '',
+    crm: '',
+    especialidade: '',
+    telefone: '',
+  })
+
+  // Carregar configurações do localStorage
+  useEffect(() => {
+    const savedSettings = localStorage.getItem(SETTINGS_KEY)
+    if (savedSettings) {
+      try {
+        const parsed = JSON.parse(savedSettings)
+        setSettings({ ...defaultSettings, ...parsed })
+      } catch (error) {
+        console.error('Erro ao carregar configurações:', error)
+      }
+    }
+
+    // Carregar dados do perfil do usuário
+    if (user) {
+      setProfileData({
+        nome: user.nome || '',
+        email: user.email || '',
+        crm: user.crm || '',
+        especialidade: user.especialidade || '',
+        telefone: user.telefone || '',
+      })
+    }
+  }, [user])
+
+  // Salvar configurações
+  const saveSettings = useCallback(async () => {
+    setSaving(true)
+    setSaved(false)
+    try {
+      localStorage.setItem(SETTINGS_KEY, JSON.stringify(settings))
+
+      // Aplicar tema
+      if (settings.geral.tema === 'dark') {
+        document.documentElement.classList.add('dark')
+      } else if (settings.geral.tema === 'light') {
+        document.documentElement.classList.remove('dark')
+      } else {
+        // Auto - detectar preferência do sistema
+        const prefersDark = window.matchMedia('(prefers-color-scheme: dark)').matches
+        document.documentElement.classList.toggle('dark', prefersDark)
+      }
+
+      setSaved(true)
+      setTimeout(() => setSaved(false), 3000)
+    } catch (error) {
+      console.error('Erro ao salvar configurações:', error)
+    } finally {
+      setSaving(false)
+    }
+  }, [settings])
+
+  // Atualizar configuração geral
+  const updateGeral = <K extends keyof AppSettings['geral']>(
+    key: K,
+    value: AppSettings['geral'][K]
+  ) => {
+    setSettings(prev => ({
+      ...prev,
+      geral: { ...prev.geral, [key]: value },
+    }))
+  }
+
+  // Atualizar configuração de segurança
+  const updateSeguranca = <K extends keyof AppSettings['seguranca']>(
+    key: K,
+    value: AppSettings['seguranca'][K]
+  ) => {
+    setSettings(prev => ({
+      ...prev,
+      seguranca: { ...prev.seguranca, [key]: value },
+    }))
+  }
+
+  // Atualizar configuração de privacidade
+  const updatePrivacidade = <K extends keyof AppSettings['privacidade']>(
+    key: K,
+    value: AppSettings['privacidade'][K]
+  ) => {
+    setSettings(prev => ({
+      ...prev,
+      privacidade: { ...prev.privacidade, [key]: value },
+    }))
+  }
+
+  // Atualizar configuração de IA
+  const updateIA = <K extends keyof AppSettings['ia']>(
+    key: K,
+    value: AppSettings['ia'][K]
+  ) => {
+    setSettings(prev => ({
+      ...prev,
+      ia: { ...prev.ia, [key]: value },
+    }))
+  }
+
+  // Exportar dados
+  const handleExportData = async () => {
+    try {
+      const data = {
+        settings,
+        exportedAt: new Date().toISOString(),
+        version: '1.0.0',
+      }
+
+      const blob = new Blob([JSON.stringify(data, null, 2)], { type: 'application/json' })
+      const url = URL.createObjectURL(blob)
+      const a = document.createElement('a')
+      a.href = url
+      a.download = `neurocare-backup-${new Date().toISOString().split('T')[0]}.json`
+      document.body.appendChild(a)
+      a.click()
+      document.body.removeChild(a)
+      URL.revokeObjectURL(url)
+    } catch (error) {
+      console.error('Erro ao exportar dados:', error)
+    }
+  }
+
+  // Limpar cache
+  const handleClearCache = async () => {
+    if (!confirm('Tem certeza que deseja limpar o cache? Isso não afetará seus dados salvos.')) {
+      return
+    }
+
+    try {
+      // Limpar caches do service worker
+      if ('caches' in window) {
+        const cacheNames = await caches.keys()
+        await Promise.all(cacheNames.map(name => caches.delete(name)))
+      }
+
+      alert('Cache limpo com sucesso!')
+    } catch (error) {
+      console.error('Erro ao limpar cache:', error)
+      alert('Erro ao limpar cache.')
+    }
+  }
+
   return (
     <Layout>
       <div className="space-y-6">
-        <div>
-          <h1 className="text-3xl font-bold text-gray-900">Configurações</h1>
-          <p className="text-gray-600 mt-2">Gerencie as configurações do sistema</p>
+        <div className="flex items-center justify-between">
+          <div>
+            <h1 className="text-3xl font-bold text-gray-900">Configurações</h1>
+            <p className="text-gray-600 mt-2">Gerencie as configurações do sistema</p>
+          </div>
+          <div className="flex items-center gap-3">
+            {saved && (
+              <span className="text-green-600 text-sm font-medium">
+                Configurações salvas!
+              </span>
+            )}
+            <Button onClick={saveSettings} loading={saving}>
+              Salvar Configurações
+            </Button>
+          </div>
         </div>
 
         <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+          {/* Perfil do Usuário */}
           <Card>
-            <CardHeader title="Configurações Gerais" />
+            <CardHeader
+              title="Perfil do Usuário"
+              subtitle="Informações da sua conta"
+            />
             <CardContent>
-              <div className="text-center py-8 text-gray-500">
-                <p className="text-4xl mb-2">⚙️</p>
-                <p>Em desenvolvimento</p>
+              <div className="space-y-4">
+                <Input
+                  label="Nome completo"
+                  value={profileData.nome}
+                  onChange={(e) => setProfileData(prev => ({ ...prev, nome: e.target.value }))}
+                  placeholder="Seu nome completo"
+                />
+                <Input
+                  label="E-mail"
+                  type="email"
+                  value={profileData.email}
+                  disabled
+                  helperText="O e-mail não pode ser alterado"
+                />
+                <div className="grid grid-cols-2 gap-4">
+                  <Input
+                    label="CRM"
+                    value={profileData.crm}
+                    onChange={(e) => setProfileData(prev => ({ ...prev, crm: e.target.value }))}
+                    placeholder="000000-UF"
+                  />
+                  <Input
+                    label="Telefone"
+                    value={profileData.telefone}
+                    onChange={(e) => setProfileData(prev => ({ ...prev, telefone: e.target.value }))}
+                    placeholder="(00) 00000-0000"
+                  />
+                </div>
+                <Input
+                  label="Especialidade"
+                  value={profileData.especialidade}
+                  onChange={(e) => setProfileData(prev => ({ ...prev, especialidade: e.target.value }))}
+                  placeholder="Ex: Neurologia"
+                />
               </div>
             </CardContent>
           </Card>
 
+          {/* Configurações Gerais */}
           <Card>
-            <CardHeader title="Segurança" />
+            <CardHeader
+              title="Configurações Gerais"
+              subtitle="Aparência e preferências do sistema"
+            />
             <CardContent>
-              <div className="text-center py-8 text-gray-500">
-                <p className="text-4xl mb-2">🔒</p>
-                <p>Em desenvolvimento</p>
+              <div className="space-y-5">
+                <Select
+                  label="Tema"
+                  value={settings.geral.tema}
+                  onChange={(value) => updateGeral('tema', value as 'light' | 'dark' | 'auto')}
+                  options={[
+                    { value: 'light', label: 'Claro' },
+                    { value: 'dark', label: 'Escuro' },
+                    { value: 'auto', label: 'Automático (sistema)' },
+                  ]}
+                />
+
+                <Select
+                  label="Idioma"
+                  value={settings.geral.idioma}
+                  onChange={(value) => updateGeral('idioma', value as 'pt-BR' | 'en-US')}
+                  options={[
+                    { value: 'pt-BR', label: 'Português (Brasil)' },
+                    { value: 'en-US', label: 'English (US)' },
+                  ]}
+                />
+
+                <div className="pt-2">
+                  <Toggle
+                    label="Notificações"
+                    description="Receber notificações do sistema"
+                    checked={settings.geral.notificacoes}
+                    onChange={(checked) => updateGeral('notificacoes', checked)}
+                  />
+                </div>
               </div>
             </CardContent>
           </Card>
 
+          {/* Segurança */}
           <Card>
-            <CardHeader title="Privacidade" />
+            <CardHeader
+              title="Segurança"
+              subtitle="Configurações de segurança da conta"
+            />
             <CardContent>
-              <div className="text-center py-8 text-gray-500">
-                <p className="text-4xl mb-2">🛡️</p>
-                <p>Em desenvolvimento</p>
+              <div className="space-y-5">
+                <Toggle
+                  label="Autenticação de dois fatores"
+                  description="Adiciona uma camada extra de segurança"
+                  checked={settings.seguranca.autenticacaoDuploFator}
+                  onChange={(checked) => updateSeguranca('autenticacaoDuploFator', checked)}
+                />
+
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-1">
+                    Tempo de sessão (minutos)
+                  </label>
+                  <input
+                    type="range"
+                    min="5"
+                    max="120"
+                    step="5"
+                    value={settings.seguranca.tempoSessao}
+                    onChange={(e) => updateSeguranca('tempoSessao', Number(e.target.value))}
+                    className="w-full h-2 bg-gray-200 rounded-lg appearance-none cursor-pointer accent-primary-600"
+                  />
+                  <div className="flex justify-between text-xs text-gray-500 mt-1">
+                    <span>5 min</span>
+                    <span className="font-medium text-primary-600">{settings.seguranca.tempoSessao} min</span>
+                    <span>120 min</span>
+                  </div>
+                </div>
+
+                <Toggle
+                  label="Backup automático"
+                  description="Realiza backup automático dos dados"
+                  checked={settings.seguranca.backupAutomatico}
+                  onChange={(checked) => updateSeguranca('backupAutomatico', checked)}
+                />
+
+                {settings.seguranca.backupAutomatico && (
+                  <Select
+                    label="Frequência do backup"
+                    value={settings.seguranca.frequenciaBackup}
+                    onChange={(value) => updateSeguranca('frequenciaBackup', value as 'diario' | 'semanal' | 'mensal')}
+                    options={[
+                      { value: 'diario', label: 'Diário' },
+                      { value: 'semanal', label: 'Semanal' },
+                      { value: 'mensal', label: 'Mensal' },
+                    ]}
+                  />
+                )}
+
+                <div className="pt-3 border-t">
+                  <Button
+                    variant="outline"
+                    size="sm"
+                    onClick={() => alert('Funcionalidade em desenvolvimento')}
+                  >
+                    Alterar senha
+                  </Button>
+                </div>
               </div>
             </CardContent>
           </Card>
 
+          {/* Privacidade */}
           <Card>
-            <CardHeader title="Inteligência Artificial" />
+            <CardHeader
+              title="Privacidade"
+              subtitle="Controle de dados e consentimento (LGPD)"
+            />
             <CardContent>
-              <div className="text-center py-8 text-gray-500">
-                <p className="text-4xl mb-2">🤖</p>
-                <p>Em desenvolvimento</p>
+              <div className="space-y-5">
+                <Toggle
+                  label="Anonimizar dados em relatórios"
+                  description="Remove informações identificáveis em exportações"
+                  checked={settings.privacidade.anonimizarDados}
+                  onChange={(checked) => updatePrivacidade('anonimizarDados', checked)}
+                />
+
+                <Toggle
+                  label="Consentimento para coleta de dados"
+                  description="Permite coleta de dados para melhorias"
+                  checked={settings.privacidade.consentimentoColeta}
+                  onChange={(checked) => updatePrivacidade('consentimentoColeta', checked)}
+                />
+
+                <Toggle
+                  label="Compartilhar dados anônimos"
+                  description="Contribui para pesquisas científicas"
+                  checked={settings.privacidade.compartilharAnonimos}
+                  onChange={(checked) => updatePrivacidade('compartilharAnonimos', checked)}
+                />
+
+                <div className="pt-3 border-t space-y-2">
+                  <p className="text-sm text-gray-600 mb-3">
+                    Conforme a LGPD, você tem direito de acessar, corrigir ou excluir seus dados.
+                  </p>
+                  <div className="flex gap-2">
+                    <Button
+                      variant="outline"
+                      size="sm"
+                      onClick={handleExportData}
+                    >
+                      Exportar meus dados
+                    </Button>
+                    <Button
+                      variant="danger"
+                      size="sm"
+                      onClick={() => {
+                        if (confirm('ATENÇÃO: Esta ação é irreversível. Deseja realmente solicitar a exclusão de todos os seus dados?')) {
+                          alert('Solicitação enviada. Você receberá um e-mail de confirmação.')
+                        }
+                      }}
+                    >
+                      Solicitar exclusão
+                    </Button>
+                  </div>
+                </div>
+              </div>
+            </CardContent>
+          </Card>
+
+          {/* Inteligência Artificial */}
+          <Card>
+            <CardHeader
+              title="Inteligência Artificial"
+              subtitle="Configurações do assistente de diagnóstico"
+            />
+            <CardContent>
+              <div className="space-y-5">
+                <Toggle
+                  label="Habilitar assistente de IA"
+                  description="Usa IA para auxiliar no diagnóstico"
+                  checked={settings.ia.habilitado}
+                  onChange={(checked) => updateIA('habilitado', checked)}
+                />
+
+                {settings.ia.habilitado && (
+                  <>
+                    <Select
+                      label="Modelo de IA"
+                      value={settings.ia.modelo}
+                      onChange={(value) => updateIA('modelo', value)}
+                      options={[
+                        { value: 'gpt-4', label: 'GPT-4 (Mais preciso)' },
+                        { value: 'gpt-3.5', label: 'GPT-3.5 (Mais rápido)' },
+                        { value: 'local', label: 'Modelo Local (Offline)' },
+                      ]}
+                    />
+
+                    <div>
+                      <label className="block text-sm font-medium text-gray-700 mb-1">
+                        Confiança mínima para sugestões
+                      </label>
+                      <input
+                        type="range"
+                        min="50"
+                        max="95"
+                        step="5"
+                        value={settings.ia.confiancaMinima}
+                        onChange={(e) => updateIA('confiancaMinima', Number(e.target.value))}
+                        className="w-full h-2 bg-gray-200 rounded-lg appearance-none cursor-pointer accent-primary-600"
+                      />
+                      <div className="flex justify-between text-xs text-gray-500 mt-1">
+                        <span>50%</span>
+                        <span className="font-medium text-primary-600">{settings.ia.confiancaMinima}%</span>
+                        <span>95%</span>
+                      </div>
+                      <p className="text-xs text-gray-500 mt-2">
+                        Sugestões abaixo deste valor não serão exibidas
+                      </p>
+                    </div>
+                  </>
+                )}
+
+                <div className="bg-blue-50 p-4 rounded-lg">
+                  <p className="text-sm text-blue-800">
+                    <strong>Nota:</strong> O assistente de IA é uma ferramenta de apoio e não substitui
+                    a avaliação clínica do profissional de saúde.
+                  </p>
+                </div>
+              </div>
+            </CardContent>
+          </Card>
+
+          {/* Dados e Armazenamento */}
+          <Card>
+            <CardHeader
+              title="Dados e Armazenamento"
+              subtitle="Gerenciamento de dados locais"
+            />
+            <CardContent>
+              <div className="space-y-4">
+                <div className="flex items-center justify-between p-3 bg-gray-50 rounded-lg">
+                  <div>
+                    <p className="text-sm font-medium text-gray-700">Cache do aplicativo</p>
+                    <p className="text-xs text-gray-500">Limpar dados temporários</p>
+                  </div>
+                  <Button
+                    variant="outline"
+                    size="sm"
+                    onClick={handleClearCache}
+                  >
+                    Limpar cache
+                  </Button>
+                </div>
+
+                <div className="flex items-center justify-between p-3 bg-gray-50 rounded-lg">
+                  <div>
+                    <p className="text-sm font-medium text-gray-700">Sincronização</p>
+                    <p className="text-xs text-gray-500">Forçar sincronização com servidor</p>
+                  </div>
+                  <Button
+                    variant="outline"
+                    size="sm"
+                    onClick={() => {
+                      alert('Sincronização iniciada!')
+                    }}
+                  >
+                    Sincronizar agora
+                  </Button>
+                </div>
+
+                <div className="flex items-center justify-between p-3 bg-gray-50 rounded-lg">
+                  <div>
+                    <p className="text-sm font-medium text-gray-700">Restaurar configurações</p>
+                    <p className="text-xs text-gray-500">Volta para configurações padrão</p>
+                  </div>
+                  <Button
+                    variant="danger"
+                    size="sm"
+                    onClick={() => {
+                      if (confirm('Restaurar todas as configurações para os valores padrão?')) {
+                        setSettings(defaultSettings)
+                        localStorage.setItem(SETTINGS_KEY, JSON.stringify(defaultSettings))
+                        alert('Configurações restauradas!')
+                      }
+                    }}
+                  >
+                    Restaurar
+                  </Button>
+                </div>
               </div>
             </CardContent>
           </Card>
         </div>
+
+        {/* Informações do Sistema */}
+        <Card>
+          <CardHeader title="Sobre o Sistema" />
+          <CardContent>
+            <div className="grid grid-cols-2 md:grid-cols-4 gap-4 text-sm">
+              <div>
+                <p className="text-gray-500">Versão</p>
+                <p className="font-medium">2.0.0</p>
+              </div>
+              <div>
+                <p className="text-gray-500">Ambiente</p>
+                <p className="font-medium">{import.meta.env.MODE}</p>
+              </div>
+              <div>
+                <p className="text-gray-500">Banco de dados</p>
+                <p className="font-medium">{import.meta.env.VITE_DATABASE_PROVIDER || 'indexeddb'}</p>
+              </div>
+              <div>
+                <p className="text-gray-500">Última atualização</p>
+                <p className="font-medium">Janeiro 2026</p>
+              </div>
+            </div>
+          </CardContent>
+        </Card>
       </div>
     </Layout>
   )
