@@ -1,8 +1,12 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useCallback } from 'react';
 import { Layout } from '@/components/layout';
 import { Card, CardHeader, CardContent } from '@/components/ui';
 import { useAuth } from '@/contexts/AuthContext';
-import { patientsApi, evaluationsApi, reportsApi } from '../services/api';
+import {
+  getPatientsProvider,
+  getEvaluationsProvider,
+  getReportsProvider
+} from '@/services/providers/factory/provider-factory';
 
 interface DashboardStats {
   totalPacientes: number;
@@ -22,31 +26,42 @@ export function DashboardPage() {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
 
-  useEffect(() => {
-    loadStats();
-  }, []);
-
-  const loadStats = async () => {
+  const loadStats = useCallback(async () => {
     try {
       setLoading(true);
       setError(null);
 
-      // Buscar dados em paralelo
-      const [patients, evaluationsData, reportsData] = await Promise.all([
-        patientsApi.getAll(),
-        evaluationsApi.getStats(),
-        reportsApi.getStats(),
+      // Obter providers
+      const [patientsProvider, evaluationsProvider, reportsProvider] = await Promise.all([
+        getPatientsProvider(),
+        getEvaluationsProvider(),
+        getReportsProvider(),
+      ]);
+
+      // Buscar dados em paralelo usando providers
+      const [patients, evaluations, reports] = await Promise.all([
+        patientsProvider.getAll(),
+        evaluationsProvider.getAll(),
+        reportsProvider.getAll(),
       ]);
 
       // Calcular avaliações de hoje
       const today = new Date();
       today.setHours(0, 0, 0, 0);
+      const todayEvaluations = evaluations.filter(e => {
+        const evalDate = new Date(e.data);
+        evalDate.setHours(0, 0, 0, 0);
+        return evalDate.getTime() === today.getTime();
+      });
+
+      // Calcular relatórios pendentes
+      const pendingReports = reports.filter(r => r.tipo === 'Completo' && !r.arquivoPDF);
 
       setStats({
         totalPacientes: patients.length,
-        avaliacoesHoje: evaluationsData.byStatus.inProgress || 0,
-        relatoriosPendentes: reportsData.byStatus.pendente || 0,
-        totalAvaliacoes: evaluationsData.total,
+        avaliacoesHoje: todayEvaluations.length,
+        relatoriosPendentes: pendingReports.length,
+        totalAvaliacoes: evaluations.length,
       });
     } catch (err: any) {
       console.error('Erro ao carregar estatísticas:', err);
@@ -54,7 +69,11 @@ export function DashboardPage() {
     } finally {
       setLoading(false);
     }
-  }
+  }, []);
+
+  useEffect(() => {
+    loadStats();
+  }, [loadStats]);
 
   return (
     <Layout>
