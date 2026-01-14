@@ -48,6 +48,8 @@ export function SettingsPage() {
       localStorage.removeItem(PROFILE_IMAGE_KEY)
     }
     setProfileImage(imageData)
+    // Disparar evento customizado para atualizar o Sidebar imediatamente
+    window.dispatchEvent(new Event('profileImageUpdated'))
   }
 
   // Handler para upload de imagem

@@ -1,6 +1,8 @@
 import { NavLink } from 'react-router-dom'
-import { useState } from 'react'
+import { useState, useEffect } from 'react'
 import { useAuth } from '@/contexts/AuthContext'
+
+const PROFILE_IMAGE_KEY = 'neurocare_profile_image'
 
 interface NavItem {
   path: string
@@ -19,7 +21,42 @@ const navItems: NavItem[] = [
 
 export function Sidebar() {
   const [collapsed, setCollapsed] = useState(false)
+  const [profileImage, setProfileImage] = useState<string | null>(null)
   const { user, logout } = useAuth()
+
+  useEffect(() => {
+    // Função para carregar foto de perfil do localStorage
+    const loadProfileImage = () => {
+      const savedImage = localStorage.getItem(PROFILE_IMAGE_KEY)
+      setProfileImage(savedImage)
+    }
+
+    // Carregar inicialmente
+    loadProfileImage()
+
+    // Escutar mudanças no localStorage (para atualizar quando a foto for alterada em outra aba)
+    const handleStorageChange = (e: StorageEvent) => {
+      if (e.key === PROFILE_IMAGE_KEY) {
+        setProfileImage(e.newValue)
+      }
+    }
+
+    // Recarregar quando a janela receber foco (para atualizar após mudanças na mesma aba)
+    const handleFocus = () => loadProfileImage()
+
+    // Escutar evento customizado para atualização imediata na mesma aba
+    const handleProfileUpdate = () => loadProfileImage()
+
+    window.addEventListener('storage', handleStorageChange)
+    window.addEventListener('focus', handleFocus)
+    window.addEventListener('profileImageUpdated', handleProfileUpdate)
+
+    return () => {
+      window.removeEventListener('storage', handleStorageChange)
+      window.removeEventListener('focus', handleFocus)
+      window.removeEventListener('profileImageUpdated', handleProfileUpdate)
+    }
+  }, [])
 
   return (
     <aside
@@ -70,9 +107,17 @@ export function Sidebar() {
         {!collapsed ? (
           <div className="flex items-center justify-between">
             <div className="flex items-center gap-3">
-              <div className="w-10 h-10 bg-primary-600 rounded-full flex items-center justify-center text-white font-bold">
-                {user?.nome.charAt(0).toUpperCase()}
-              </div>
+              {profileImage ? (
+                <img
+                  src={profileImage}
+                  alt="Foto de perfil"
+                  className="w-10 h-10 rounded-full object-cover"
+                />
+              ) : (
+                <div className="w-10 h-10 bg-primary-600 rounded-full flex items-center justify-center text-white font-bold">
+                  {user?.nome.charAt(0).toUpperCase()}
+                </div>
+              )}
               <div className="flex-1 min-w-0">
                 <p className="text-sm font-medium text-gray-900 dark:text-gray-100 truncate">{user?.nome}</p>
                 <p className="text-xs text-gray-500 dark:text-gray-400 truncate">{user?.email}</p>

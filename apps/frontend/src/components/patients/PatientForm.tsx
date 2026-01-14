@@ -1,7 +1,8 @@
-import { useState, useEffect, useCallback } from 'react';
+import { useState, useEffect, useCallback, useRef } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { Button, Input, Card, CardHeader, CardContent, TagInput } from '@/components/ui';
-import { patientsApi } from '../../services/api';
+import { getPatientsProvider } from '@/services/providers/factory/provider-factory';
+import type { IPatientsProvider } from '@/services/providers/types';
 import type { Gender } from '@neurocare/shared-types';
 import { validateForm, formatCPF, formatPhone, formatCEP, formatRG, formatUF } from '@/utils/validation';
 
@@ -76,6 +77,7 @@ export function PatientForm({ patientId, onSuccess, onCancel }: PatientFormProps
   const [loadingData, setLoadingData] = useState(!!patientId);
   const [error, setError] = useState<string | null>(null);
   const [fieldErrors, setFieldErrors] = useState<Record<string, string>>({});
+  const providerRef = useRef<IPatientsProvider | null>(null);
   const [formData, setFormData] = useState<FormData>({
     nome: '',
     cpf: '',
@@ -101,7 +103,12 @@ export function PatientForm({ patientId, onSuccess, onCancel }: PatientFormProps
     if (!patientId) return;
     try {
       setLoadingData(true);
-      const patient = await patientsApi.getById(patientId);
+
+      if (!providerRef.current) {
+        providerRef.current = await getPatientsProvider();
+      }
+
+      const patient = await providerRef.current.getById(patientId);
 
       setFormData({
         nome: patient.nome || '',
@@ -237,6 +244,10 @@ export function PatientForm({ patientId, onSuccess, onCancel }: PatientFormProps
       setLoading(true);
       setError(null);
 
+      if (!providerRef.current) {
+        providerRef.current = await getPatientsProvider();
+      }
+
       // Prepare data
       const dataToSend = {
         nome: formData.nome.trim(),
@@ -260,9 +271,9 @@ export function PatientForm({ patientId, onSuccess, onCancel }: PatientFormProps
       };
 
       if (patientId) {
-        await patientsApi.update(patientId, dataToSend);
+        await providerRef.current.update(patientId, dataToSend);
       } else {
-        await patientsApi.create(dataToSend);
+        await providerRef.current.create(dataToSend);
       }
 
       if (onSuccess) {
