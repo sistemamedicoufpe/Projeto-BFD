@@ -1,25 +1,8 @@
 import { api } from './api-client';
-import type { Patient } from '@neurocare/shared-types';
+import type { Patient, CreatePatientDTO, UpdatePatientDTO } from '@neurocare/shared-types';
 
-/**
- * DTO para criar paciente (apenas campos necessários)
- */
-export interface CreatePatientDto {
-  nome: string;
-  cpf: string;
-  dataNascimento: string;
-  genero: 'MASCULINO' | 'FEMININO' | 'OUTRO';
-  telefone?: string;
-  email?: string;
-  endereco?: string;
-  contatoEmergencia?: string;
-  historicoMedico?: string;
-}
-
-/**
- * DTO para atualizar paciente
- */
-export type UpdatePatientDto = Partial<CreatePatientDto>;
+// Re-export types for convenience
+export type { CreatePatientDTO, UpdatePatientDTO };
 
 /**
  * Serviço de pacientes - integração com backend
@@ -54,7 +37,7 @@ export const patientsApi = {
   /**
    * Criar novo paciente
    */
-  async create(data: CreatePatientDto): Promise<Patient> {
+  async create(data: CreatePatientDTO): Promise<Patient> {
     const response = await api.post<Patient>('/patients', data);
     return response.data;
   },
@@ -62,7 +45,7 @@ export const patientsApi = {
   /**
    * Atualizar paciente
    */
-  async update(id: string, data: UpdatePatientDto): Promise<Patient> {
+  async update(id: string, data: Partial<CreatePatientDTO>): Promise<Patient> {
     const response = await api.patch<Patient>(`/patients/${id}`, data);
     return response.data;
   },

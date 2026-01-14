@@ -1,40 +1,8 @@
 import { api } from './api-client';
-import type { Evaluation } from '@neurocare/shared-types';
+import type { Evaluation, CreateEvaluationDTO, UpdateEvaluationDTO, EvaluationStatus } from '@neurocare/shared-types';
 
-/**
- * DTO para criar avaliação
- */
-export interface CreateEvaluationDto {
-  patientId: string;
-  queixaPrincipal?: string;
-  status?: 'IN_PROGRESS' | 'COMPLETED' | 'CANCELLED';
-  mmseResult?: {
-    totalScore: number;
-    maxScore: number;
-    percentage: number;
-    interpretation: string;
-    details?: Record<string, number>;
-  };
-  mocaResult?: {
-    totalScore: number;
-    maxScore: number;
-    percentage: number;
-    interpretation: string;
-  };
-  clockTestResult?: {
-    score: number;
-    maxScore: number;
-    interpretation: string;
-  };
-  hipoteseDiagnostica?: string;
-  cid10?: string;
-  observacoes?: string;
-}
-
-/**
- * DTO para atualizar avaliação
- */
-export type UpdateEvaluationDto = Partial<CreateEvaluationDto>;
+// Re-export types for convenience
+export type { CreateEvaluationDTO, UpdateEvaluationDTO, EvaluationStatus };
 
 /**
  * Estatísticas de avaliações
@@ -89,7 +57,7 @@ export const evaluationsApi = {
   /**
    * Criar nova avaliação
    */
-  async create(data: CreateEvaluationDto): Promise<Evaluation> {
+  async create(data: CreateEvaluationDTO): Promise<Evaluation> {
     const response = await api.post<Evaluation>('/evaluations', data);
     return response.data;
   },
@@ -97,7 +65,7 @@ export const evaluationsApi = {
   /**
    * Atualizar avaliação
    */
-  async update(id: string, data: UpdateEvaluationDto): Promise<Evaluation> {
+  async update(id: string, data: Partial<CreateEvaluationDTO> & { status?: EvaluationStatus }): Promise<Evaluation> {
     const response = await api.patch<Evaluation>(`/evaluations/${id}`, data);
     return response.data;
   },

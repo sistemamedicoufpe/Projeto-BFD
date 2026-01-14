@@ -1,32 +1,8 @@
 import { api } from './api-client';
-import type { Report } from '@neurocare/shared-types';
+import type { Report, CreateReportDTO, UpdateReportDTO, ReportStatus } from '@neurocare/shared-types';
 
-/**
- * DTO para criar relatório
- */
-export interface CreateReportDto {
-  evaluationId: string;
-  titulo: string;
-  descricao?: string;
-  status?: 'PENDENTE' | 'EM_REVISAO' | 'CONCLUIDO' | 'ASSINADO';
-  content?: {
-    introducao?: string;
-    anamnese?: string;
-    exameFisico?: string;
-    testesAplicados?: string[];
-    resultados?: Record<string, unknown>;
-    conclusao?: string;
-    hipoteseDiagnostica?: string;
-    conduta?: string;
-  };
-  pdfUrl?: string;
-  pdfKey?: string;
-}
-
-/**
- * DTO para atualizar relatório
- */
-export type UpdateReportDto = Partial<CreateReportDto>;
+// Re-export types for convenience
+export type { CreateReportDTO, UpdateReportDTO, ReportStatus };
 
 /**
  * Estatísticas de relatórios
@@ -82,7 +58,7 @@ export const reportsApi = {
   /**
    * Criar novo relatório
    */
-  async create(data: CreateReportDto): Promise<Report> {
+  async create(data: CreateReportDTO): Promise<Report> {
     const response = await api.post<Report>('/reports', data);
     return response.data;
   },
@@ -90,7 +66,7 @@ export const reportsApi = {
   /**
    * Atualizar relatório
    */
-  async update(id: string, data: UpdateReportDto): Promise<Report> {
+  async update(id: string, data: Partial<CreateReportDTO>): Promise<Report> {
     const response = await api.patch<Report>(`/reports/${id}`, data);
     return response.data;
   },
