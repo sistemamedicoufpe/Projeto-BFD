@@ -10,6 +10,7 @@ import { DashboardPage } from './pages/DashboardPage'
 import { PatientsPage } from './pages/PatientsPage'
 import { PatientCreatePage } from './pages/PatientCreatePage'
 import { PatientEditPage } from './pages/PatientEditPage'
+import { PatientDetailPage } from './pages/PatientDetailPage'
 import { EvaluationsPage } from './pages/EvaluationsPage'
 import { EvaluationCreatePage } from './pages/EvaluationCreatePage'
 import { ReportsPage } from './pages/ReportsPage'
@@ -60,6 +61,14 @@ function App() {
             element={
               <ProtectedRoute>
                 <PatientEditPage />
+              </ProtectedRoute>
+            }
+          />
+          <Route
+            path="/pacientes/:id"
+            element={
+              <ProtectedRoute>
+                <PatientDetailPage />
               </ProtectedRoute>
             }
           />

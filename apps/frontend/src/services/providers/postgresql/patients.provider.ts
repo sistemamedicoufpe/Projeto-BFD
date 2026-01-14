@@ -1,29 +1,28 @@
-import type { Patient } from '@/types'
-import type { IPatientsProvider } from '../types'
+import type { IPatientsProvider, ProviderPatient, CreatePatientData } from '../types'
 import { api } from '../../api/api-client'
 
 export class PostgreSQLPatientsProvider implements IPatientsProvider {
-  async getAll(): Promise<Patient[]> {
-    const response = await api.get<Patient[]>('/patients')
+  async getAll(): Promise<ProviderPatient[]> {
+    const response = await api.get<ProviderPatient[]>('/patients')
     return response.data.map((p) => ({ ...p, _synced: true }))
   }
 
-  async getById(id: string): Promise<Patient | undefined> {
+  async getById(id: string): Promise<ProviderPatient | undefined> {
     try {
-      const response = await api.get<Patient>(`/patients/${id}`)
+      const response = await api.get<ProviderPatient>(`/patients/${id}`)
       return { ...response.data, _synced: true }
     } catch {
       return undefined
     }
   }
 
-  async create(data: Omit<Patient, 'id' | 'createdAt' | 'updatedAt' | '_synced'>): Promise<Patient> {
-    const response = await api.post<Patient>('/patients', data)
+  async create(data: CreatePatientData): Promise<ProviderPatient> {
+    const response = await api.post<ProviderPatient>('/patients', data)
     return { ...response.data, _synced: true }
   }
 
-  async update(id: string, updates: Partial<Patient>): Promise<Patient> {
-    const response = await api.patch<Patient>(`/patients/${id}`, updates)
+  async update(id: string, updates: Partial<ProviderPatient>): Promise<ProviderPatient> {
+    const response = await api.patch<ProviderPatient>(`/patients/${id}`, updates)
     return { ...response.data, _synced: true }
   }
 
@@ -31,8 +30,8 @@ export class PostgreSQLPatientsProvider implements IPatientsProvider {
     await api.delete(`/patients/${id}`)
   }
 
-  async search(query: string): Promise<Patient[]> {
-    const response = await api.get<Patient[]>('/patients/search', {
+  async search(query: string): Promise<ProviderPatient[]> {
+    const response = await api.get<ProviderPatient[]>('/patients/search', {
       params: { q: query },
     })
     return response.data.map((p) => ({ ...p, _synced: true }))

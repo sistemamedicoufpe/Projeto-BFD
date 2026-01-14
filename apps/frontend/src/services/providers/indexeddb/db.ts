@@ -1,8 +1,9 @@
 import Dexie, { type Table } from 'dexie'
-import type { Patient, Exam, Evaluation, Report, SyncQueueItem, AuditLog } from '@/types'
+import type { Exam, Evaluation, Report, SyncQueueItem, AuditLog } from '@/types'
+import type { ProviderPatient } from '../types'
 
 export class NeuroCareDB extends Dexie {
-  patients!: Table<Patient, string>
+  patients!: Table<ProviderPatient, string>
   exams!: Table<Exam, string>
   evaluations!: Table<Evaluation, string>
   reports!: Table<Report, string>

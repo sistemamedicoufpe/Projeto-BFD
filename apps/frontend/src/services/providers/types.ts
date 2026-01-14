@@ -1,4 +1,34 @@
-import type { Patient, Evaluation, Exam, Report, User, LoginCredentials, RegisterData, AuthTokens } from '@/types'
+import type { Evaluation, Exam, Report, User, LoginCredentials, RegisterData, AuthTokens } from '@/types'
+
+// ============================================
+// PATIENT TYPE FOR PROVIDERS
+// ============================================
+
+export interface ProviderPatient {
+  id: string
+  nome: string
+  cpf: string
+  rg?: string
+  dataNascimento: string
+  idade: number
+  genero: string
+  email?: string
+  telefone?: string
+  celular?: string
+  enderecoCompleto?: string
+  cep?: string
+  cidade?: string
+  estado?: string
+  historicoMedico?: string
+  alergias?: string[]
+  medicamentosEmUso?: string[]
+  nomeResponsavel?: string
+  telefoneResponsavel?: string
+  observacoes?: string
+  createdAt: Date
+  updatedAt: Date
+  _synced: boolean
+}
 
 // ============================================
 // BASE PROVIDER INTERFACE
@@ -16,8 +46,15 @@ export interface IDataProvider<T> {
 // ENTITY-SPECIFIC PROVIDERS
 // ============================================
 
-export interface IPatientsProvider extends IDataProvider<Patient> {
-  search(query: string): Promise<Patient[]>
+export type CreatePatientData = Omit<ProviderPatient, 'id' | 'createdAt' | 'updatedAt' | '_synced' | 'idade'>
+
+export interface IPatientsProvider {
+  getAll(): Promise<ProviderPatient[]>
+  getById(id: string): Promise<ProviderPatient | undefined>
+  create(data: CreatePatientData): Promise<ProviderPatient>
+  update(id: string, data: Partial<ProviderPatient>): Promise<ProviderPatient>
+  delete(id: string): Promise<void>
+  search(query: string): Promise<ProviderPatient[]>
   count(): Promise<number>
 }
 

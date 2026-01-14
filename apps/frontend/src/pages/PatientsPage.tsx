@@ -1,19 +1,40 @@
 import { useState, useEffect, useCallback, useRef } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { Layout } from '@/components/layout';
-import { Card, CardHeader, CardContent, Button, Input } from '@/components/ui';
+import { Card, CardHeader, CardContent, Button, Input, ConfirmModal, AlertModal } from '@/components/ui';
 import { getPatientsProvider } from '@/services/providers/factory/provider-factory';
-import type { IPatientsProvider } from '@/services/providers/types';
-import type { Patient } from '@neurocare/shared-types';
+import type { IPatientsProvider, ProviderPatient } from '@/services/providers/types';
+
+const translateGender = (gender: string): string => {
+  const translations: Record<string, string> = {
+    MALE: 'Masculino',
+    FEMALE: 'Feminino',
+    OTHER: 'Outro',
+    male: 'Masculino',
+    female: 'Feminino',
+    other: 'Outro',
+    M: 'Masculino',
+    F: 'Feminino',
+  };
+  return translations[gender] || gender;
+};
 
 export function PatientsPage() {
   const navigate = useNavigate();
-  const [patients, setPatients] = useState<Patient[]>([]);
-  const [filteredPatients, setFilteredPatients] = useState<Patient[]>([]);
+  const [patients, setPatients] = useState<ProviderPatient[]>([]);
+  const [filteredPatients, setFilteredPatients] = useState<ProviderPatient[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [searchQuery, setSearchQuery] = useState('');
   const [deleting, setDeleting] = useState<string | null>(null);
+  const [deleteModal, setDeleteModal] = useState<{ isOpen: boolean; patientId: string | null }>({
+    isOpen: false,
+    patientId: null,
+  });
+  const [alertModal, setAlertModal] = useState<{ isOpen: boolean; message: string }>({
+    isOpen: false,
+    message: '',
+  });
   const providerRef = useRef<IPatientsProvider | null>(null);
 
   const loadPatients = useCallback(async () => {
@@ -59,13 +80,21 @@ export function PatientsPage() {
     filterPatients();
   }, [filterPatients]);
 
-  const handleDelete = async (id: string) => {
-    if (!confirm('Tem certeza que deseja excluir este paciente?')) {
-      return;
-    }
+  const openDeleteModal = (id: string) => {
+    setDeleteModal({ isOpen: true, patientId: id });
+  };
+
+  const closeDeleteModal = () => {
+    setDeleteModal({ isOpen: false, patientId: null });
+  };
+
+  const handleDelete = async () => {
+    const id = deleteModal.patientId;
+    if (!id) return;
 
     try {
       setDeleting(id);
+      closeDeleteModal();
 
       if (!providerRef.current) {
         providerRef.current = await getPatientsProvider();
@@ -75,7 +104,7 @@ export function PatientsPage() {
       await loadPatients();
     } catch (err: unknown) {
       console.error('Erro ao excluir paciente:', err);
-      alert('Erro ao excluir paciente. Tente novamente.');
+      setAlertModal({ isOpen: true, message: 'Erro ao excluir paciente. Tente novamente.' });
     } finally {
       setDeleting(null);
     }
@@ -116,7 +145,7 @@ export function PatientsPage() {
           <CardHeader
             title="Lista de Pacientes"
             subtitle={`${filteredPatients.length} de ${patients.length} paciente(s)`}
-            actions={
+            action={
               <Input
                 type="search"
                 placeholder="Buscar por nome ou CPF..."
@@ -192,22 +221,27 @@ export function PatientsPage() {
                           <div className="text-sm text-gray-600">{patient.idade} anos</div>
                         </td>
                         <td className="px-6 py-4 whitespace-nowrap">
-                          <div className="text-sm text-gray-600">{patient.genero}</div>
+                          <div className="text-sm text-gray-600 dark:text-gray-400">
+                            {translateGender(patient.genero)}
+                          </div>
                         </td>
                         <td className="px-6 py-4 whitespace-nowrap text-sm font-medium">
-                          <button className="text-primary-600 hover:text-primary-900 mr-3">
+                          <button
+                            onClick={() => navigate(`/pacientes/${patient.id}`)}
+                            className="text-primary-600 hover:text-primary-900 dark:text-primary-400 dark:hover:text-primary-300 mr-3"
+                          >
                             Ver
                           </button>
                           <button
                             onClick={() => navigate(`/pacientes/${patient.id}/editar`)}
-                            className="text-blue-600 hover:text-blue-900 mr-3"
+                            className="text-blue-600 hover:text-blue-900 dark:text-blue-400 dark:hover:text-blue-300 mr-3"
                           >
                             Editar
                           </button>
                           <button
-                            onClick={() => handleDelete(patient.id)}
+                            onClick={() => openDeleteModal(patient.id)}
                             disabled={deleting === patient.id}
-                            className="text-red-600 hover:text-red-900 disabled:opacity-50"
+                            className="text-red-600 hover:text-red-900 dark:text-red-400 dark:hover:text-red-300 disabled:opacity-50"
                           >
                             {deleting === patient.id ? 'Excluindo...' : 'Excluir'}
                           </button>
@@ -220,6 +254,26 @@ export function PatientsPage() {
             )}
           </CardContent>
         </Card>
+
+        <ConfirmModal
+          isOpen={deleteModal.isOpen}
+          onClose={closeDeleteModal}
+          onConfirm={handleDelete}
+          title="Excluir Paciente"
+          message="Tem certeza que deseja excluir este paciente? Esta ação não pode ser desfeita."
+          confirmText="Excluir"
+          cancelText="Cancelar"
+          variant="danger"
+          loading={deleting !== null}
+        />
+
+        <AlertModal
+          isOpen={alertModal.isOpen}
+          onClose={() => setAlertModal({ isOpen: false, message: '' })}
+          title="Erro"
+          message={alertModal.message}
+          variant="error"
+        />
       </div>
     </Layout>
   );

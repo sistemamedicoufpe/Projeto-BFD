@@ -110,6 +110,11 @@ export function PatientForm({ patientId, onSuccess, onCancel }: PatientFormProps
 
       const patient = await providerRef.current.getById(patientId);
 
+      if (!patient) {
+        setError('Paciente não encontrado.');
+        return;
+      }
+
       setFormData({
         nome: patient.nome || '',
         cpf: patient.cpf || '',
@@ -117,7 +122,7 @@ export function PatientForm({ patientId, onSuccess, onCancel }: PatientFormProps
         dataNascimento: patient.dataNascimento
           ? new Date(patient.dataNascimento).toISOString().split('T')[0]
           : '',
-        genero: patient.genero || '',
+        genero: (patient.genero as FormData['genero']) || '',
         email: patient.email || '',
         telefone: patient.telefone || '',
         celular: patient.celular || '',
