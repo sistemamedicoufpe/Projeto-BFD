@@ -1,7 +1,8 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useCallback, useRef } from 'react';
 import { Layout } from '@/components/layout';
 import { Card, CardHeader, CardContent, Button, Input } from '@/components/ui';
-import { reportsApi } from '../services/api';
+import { getReportsProvider } from '@/services/providers/factory/provider-factory';
+import type { IReportsProvider } from '@/services/providers/types';
 import type { Report } from '@neurocare/shared-types';
 
 export function ReportsPage() {
@@ -11,24 +12,30 @@ export function ReportsPage() {
   const [filterStatus, setFilterStatus] = useState<string>('all');
   const [searchQuery, setSearchQuery] = useState('');
   const [deleting, setDeleting] = useState<string | null>(null);
+  const providerRef = useRef<IReportsProvider | null>(null);
 
-  useEffect(() => {
-    loadReports();
-  }, []);
-
-  const loadReports = async () => {
+  const loadReports = useCallback(async () => {
     try {
       setLoading(true);
       setError(null);
-      const data = await reportsApi.getAll();
+
+      if (!providerRef.current) {
+        providerRef.current = await getReportsProvider();
+      }
+
+      const data = await providerRef.current.getAll();
       setReports(data);
-    } catch (err: any) {
+    } catch (err: unknown) {
       console.error('Erro ao carregar relatórios:', err);
       setError('Erro ao carregar relatórios. Tente novamente.');
     } finally {
       setLoading(false);
     }
-  };
+  }, []);
+
+  useEffect(() => {
+    loadReports();
+  }, [loadReports]);
 
   const handleDelete = async (id: string) => {
     if (!confirm('Tem certeza que deseja excluir este relatório?')) {
@@ -37,9 +44,14 @@ export function ReportsPage() {
 
     try {
       setDeleting(id);
-      await reportsApi.delete(id);
+
+      if (!providerRef.current) {
+        providerRef.current = await getReportsProvider();
+      }
+
+      await providerRef.current.delete(id);
       await loadReports();
-    } catch (err: any) {
+    } catch (err: unknown) {
       console.error('Erro ao excluir relatório:', err);
       alert('Erro ao excluir relatório. Tente novamente.');
     } finally {

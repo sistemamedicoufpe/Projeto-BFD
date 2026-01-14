@@ -1,9 +1,10 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useCallback, useRef } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { Layout } from '@/components/layout';
 import { Card, CardHeader, CardContent, Button, Input } from '@/components/ui';
 import { MMSETest } from '@/components/evaluations';
-import { evaluationsApi, patientsApi } from '../services/api';
+import { getEvaluationsProvider, getPatientsProvider } from '@/services/providers/factory/provider-factory';
+import type { IEvaluationsProvider, IPatientsProvider } from '@/services/providers/types';
 import type { Patient } from '@neurocare/shared-types';
 
 type Step = 'basic-info' | 'mmse-test' | 'review';
@@ -38,6 +39,9 @@ export function EvaluationCreatePage() {
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
+  const patientsProviderRef = useRef<IPatientsProvider | null>(null);
+  const evaluationsProviderRef = useRef<IEvaluationsProvider | null>(null);
+
   const [basicInfo, setBasicInfo] = useState<BasicInfo>({
     patientId: '',
     dataAvaliacao: new Date().toISOString().split('T')[0],
@@ -52,14 +56,15 @@ export function EvaluationCreatePage() {
 
   const [mmseResult, setMmseResult] = useState<MMSEResult | null>(null);
 
-  useEffect(() => {
-    loadPatients();
-  }, []);
-
-  const loadPatients = async () => {
+  const loadPatients = useCallback(async () => {
     try {
       setLoadingPatients(true);
-      const data = await patientsApi.getAll();
+
+      if (!patientsProviderRef.current) {
+        patientsProviderRef.current = await getPatientsProvider();
+      }
+
+      const data = await patientsProviderRef.current.getAll();
       setPatients(data);
     } catch (err) {
       console.error('Erro ao carregar pacientes:', err);
@@ -67,7 +72,11 @@ export function EvaluationCreatePage() {
     } finally {
       setLoadingPatients(false);
     }
-  };
+  }, []);
+
+  useEffect(() => {
+    loadPatients();
+  }, [loadPatients]);
 
   const handleBasicInfoChange = (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement | HTMLSelectElement>) => {
     const { name, value } = e.target;
@@ -101,6 +110,10 @@ export function EvaluationCreatePage() {
       setSaving(true);
       setError(null);
 
+      if (!evaluationsProviderRef.current) {
+        evaluationsProviderRef.current = await getEvaluationsProvider();
+      }
+
       const evaluationData = {
         patientId: basicInfo.patientId,
         dataAvaliacao: basicInfo.dataAvaliacao,
@@ -115,13 +128,14 @@ export function EvaluationCreatePage() {
         mmseResult: mmseResult || undefined,
       };
 
-      await evaluationsApi.create(evaluationData);
+      await evaluationsProviderRef.current.create(evaluationData);
       navigate('/avaliacoes');
-    } catch (err: any) {
+    } catch (err: unknown) {
       console.error('Erro ao salvar avaliação:', err);
+      const error = err as { response?: { data?: { message?: string } }; message?: string };
       const errorMessage =
-        err?.response?.data?.message ||
-        err?.message ||
+        error?.response?.data?.message ||
+        error?.message ||
         'Erro ao salvar avaliação. Tente novamente.';
       setError(errorMessage);
     } finally {

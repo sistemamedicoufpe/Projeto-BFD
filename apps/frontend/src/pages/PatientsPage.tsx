@@ -1,8 +1,9 @@
-import { useState, useEffect, useCallback } from 'react';
+import { useState, useEffect, useCallback, useRef } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { Layout } from '@/components/layout';
 import { Card, CardHeader, CardContent, Button, Input } from '@/components/ui';
-import { patientsApi } from '../services/api';
+import { getPatientsProvider } from '@/services/providers/factory/provider-factory';
+import type { IPatientsProvider } from '@/services/providers/types';
 import type { Patient } from '@neurocare/shared-types';
 
 export function PatientsPage() {
@@ -13,12 +14,18 @@ export function PatientsPage() {
   const [error, setError] = useState<string | null>(null);
   const [searchQuery, setSearchQuery] = useState('');
   const [deleting, setDeleting] = useState<string | null>(null);
+  const providerRef = useRef<IPatientsProvider | null>(null);
 
   const loadPatients = useCallback(async () => {
     try {
       setLoading(true);
       setError(null);
-      const data = await patientsApi.getAll();
+
+      if (!providerRef.current) {
+        providerRef.current = await getPatientsProvider();
+      }
+
+      const data = await providerRef.current.getAll();
       setPatients(data);
       setFilteredPatients(data);
     } catch (err: unknown) {
@@ -59,7 +66,12 @@ export function PatientsPage() {
 
     try {
       setDeleting(id);
-      await patientsApi.delete(id);
+
+      if (!providerRef.current) {
+        providerRef.current = await getPatientsProvider();
+      }
+
+      await providerRef.current.delete(id);
       await loadPatients();
     } catch (err: unknown) {
       console.error('Erro ao excluir paciente:', err);

@@ -1,8 +1,9 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useCallback, useRef } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { Layout } from '@/components/layout';
 import { Card, CardHeader, CardContent, Button, Input } from '@/components/ui';
-import { evaluationsApi } from '../services/api';
+import { getEvaluationsProvider } from '@/services/providers/factory/provider-factory';
+import type { IEvaluationsProvider } from '@/services/providers/types';
 import type { Evaluation, Patient } from '@neurocare/shared-types';
 
 interface EvaluationWithPatient extends Evaluation {
@@ -17,24 +18,30 @@ export function EvaluationsPage() {
   const [filterStatus, setFilterStatus] = useState<string>('all');
   const [searchQuery, setSearchQuery] = useState('');
   const [deleting, setDeleting] = useState<string | null>(null);
+  const providerRef = useRef<IEvaluationsProvider | null>(null);
 
-  useEffect(() => {
-    loadEvaluations();
-  }, []);
-
-  const loadEvaluations = async () => {
+  const loadEvaluations = useCallback(async () => {
     try {
       setLoading(true);
       setError(null);
-      const data = await evaluationsApi.getAll();
+
+      if (!providerRef.current) {
+        providerRef.current = await getEvaluationsProvider();
+      }
+
+      const data = await providerRef.current.getAll();
       setEvaluations(data);
-    } catch (err: any) {
+    } catch (err: unknown) {
       console.error('Erro ao carregar avaliações:', err);
       setError('Erro ao carregar avaliações. Tente novamente.');
     } finally {
       setLoading(false);
     }
-  };
+  }, []);
+
+  useEffect(() => {
+    loadEvaluations();
+  }, [loadEvaluations]);
 
   const handleDelete = async (id: string) => {
     if (!confirm('Tem certeza que deseja excluir esta avaliação?')) {
@@ -43,9 +50,14 @@ export function EvaluationsPage() {
 
     try {
       setDeleting(id);
-      await evaluationsApi.delete(id);
+
+      if (!providerRef.current) {
+        providerRef.current = await getEvaluationsProvider();
+      }
+
+      await providerRef.current.delete(id);
       await loadEvaluations();
-    } catch (err: any) {
+    } catch (err: unknown) {
       console.error('Erro ao excluir avaliação:', err);
       alert('Erro ao excluir avaliação. Tente novamente.');
     } finally {
