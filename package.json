@@ -7,6 +7,11 @@
     "apps/*",
     "packages/*"
   ],
+  "pnpm": {
+    "overrides": {
+      "js-yaml": "^4.1.1"
+    }
+  },
   "scripts": {
     "dev": "turbo run dev",
     "build": "turbo run build",
