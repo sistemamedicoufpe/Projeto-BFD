@@ -115,7 +115,7 @@ export function TagInput({
           ))}
 
           {!disabled && (!maxTags || tags.length < maxTags) && (
-            <div className="relative flex-1 min-w-[150px]">
+            <div className="relative flex-1 min-w-[150px] flex items-center gap-2">
               <input
                 ref={inputRef}
                 type="text"
@@ -124,14 +124,26 @@ export function TagInput({
                 onKeyDown={handleKeyDown}
                 onFocus={() => setShowSuggestions(inputValue.length > 0 && filteredSuggestions.length > 0)}
                 onBlur={() => setTimeout(() => setShowSuggestions(false), 200)}
-                placeholder={tags.length === 0 ? placeholder : ''}
+                placeholder={tags.length === 0 ? placeholder : 'Adicionar outro...'}
                 disabled={disabled}
                 className={cn(
-                  'w-full py-1 bg-transparent border-none outline-none',
+                  'flex-1 py-1 bg-transparent border-none outline-none',
                   'text-gray-900 dark:text-gray-100',
                   'placeholder:text-gray-400 dark:placeholder:text-gray-500'
                 )}
               />
+              {inputValue.trim() && (
+                <button
+                  type="button"
+                  onClick={() => addTag(inputValue)}
+                  className="p-1 rounded-full bg-primary-500 hover:bg-primary-600 text-white transition-colors"
+                  title="Adicionar"
+                >
+                  <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 4v16m8-8H4" />
+                  </svg>
+                </button>
+              )}
 
               {/* Suggestions Dropdown */}
               {showSuggestions && filteredSuggestions.length > 0 && (

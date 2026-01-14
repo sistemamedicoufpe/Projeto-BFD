@@ -484,8 +484,8 @@ export function PatientForm({ patientId, onSuccess, onCancel }: PatientFormProps
               tags={formData.alergias}
               onChange={handleAllergyChange}
               suggestions={ALLERGY_SUGGESTIONS}
-              placeholder="Digite uma alergia e pressione Enter"
-              helperText="Adicione alergias conhecidas do paciente"
+              placeholder="Digite qualquer alergia e pressione Enter"
+              helperText="Digite qualquer alergia (sugestões aparecem ao digitar)"
             />
 
             <TagInput
@@ -493,8 +493,8 @@ export function PatientForm({ patientId, onSuccess, onCancel }: PatientFormProps
               tags={formData.medicamentosEmUso}
               onChange={handleMedicationChange}
               suggestions={MEDICATION_SUGGESTIONS}
-              placeholder="Digite um medicamento e pressione Enter"
-              helperText="Adicione os medicamentos que o paciente utiliza regularmente"
+              placeholder="Digite qualquer medicamento e pressione Enter"
+              helperText="Digite qualquer medicamento (sugestões aparecem ao digitar)"
             />
           </div>
         </CardContent>
