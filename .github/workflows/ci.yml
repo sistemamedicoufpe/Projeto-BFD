@@ -252,7 +252,6 @@ jobs:
 
     environment:
       name: firebase-hosting
-      url: https://${{ secrets.FIREBASE_PROJECT_ID }}.web.app
 
     steps:
       - name: Checkout repository
