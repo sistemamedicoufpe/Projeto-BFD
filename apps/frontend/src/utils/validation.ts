@@ -90,7 +90,7 @@ export function isValidCEP(cep: string): boolean {
  */
 export function isValidCRM(crm: string): boolean {
   // Formato: número + UF (ex: 123456-SP ou 123456/SP ou 123456 SP)
-  const crmRegex = /^\d{4,6}[-\/\s]?[A-Z]{2}$/i
+  const crmRegex = /^\d{4,6}[-/\s]?[A-Z]{2}$/i
   return crmRegex.test(crm.trim())
 }
 
