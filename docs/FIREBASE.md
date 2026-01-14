@@ -119,7 +119,70 @@ Configure os seguintes secrets no GitHub:
 | `FIREBASE_STORAGE_BUCKET` | Storage Bucket |
 | `FIREBASE_MESSAGING_SENDER_ID` | Messaging Sender ID |
 | `FIREBASE_APP_ID` | App ID |
+| `FIREBASE_SERVICE_ACCOUNT` | Service Account JSON (para deploy) |
 | `ENCRYPTION_KEY` | Chave de criptografia (32+ chars) |
+
+## Configurar Service Account para Deploy
+
+Para o deploy automático via CI/CD, você precisa criar uma Service Account:
+
+1. Acesse o [Google Cloud Console](https://console.cloud.google.com/)
+2. Selecione seu projeto Firebase
+3. Vá para **IAM & Admin** > **Service Accounts**
+4. Clique em **Create Service Account**
+5. Nome: `github-actions-deploy`
+6. Clique em **Create and Continue**
+7. Adicione os roles:
+   - `Firebase Hosting Admin`
+   - `Cloud Run Viewer`
+   - `Service Account User`
+8. Clique em **Done**
+9. Na lista de service accounts, clique nos 3 pontos > **Manage keys**
+10. **Add Key** > **Create new key** > **JSON**
+11. Salve o arquivo JSON
+12. Copie o conteúdo completo do JSON e adicione como secret `FIREBASE_SERVICE_ACCOUNT` no GitHub
+
+## Ambientes de Deploy
+
+O projeto tem dois ambientes de deploy:
+
+### 1. GitHub Pages (IndexedDB)
+- **URL**: `https://sistemamedicoufpe.github.io/Projeto-BFD/`
+- **Provider**: IndexedDB (offline-only)
+- **Uso**: Demo, testes, desenvolvimento
+- **Dados**: Armazenados localmente no navegador
+
+### 2. Firebase Hosting (Firebase)
+- **URL**: `https://<project-id>.web.app/`
+- **Provider**: Firebase (Firestore + Auth)
+- **Uso**: Produção
+- **Dados**: Sincronizados na nuvem
+
+```
+┌─────────────────────────────────────────────────────────────┐
+│                      CI/CD Pipeline                          │
+├─────────────────────────────────────────────────────────────┤
+│                                                              │
+│  ┌─────────────┐    ┌─────────────────────────────────────┐ │
+│  │   Lint      │───>│  Build GitHub Pages (IndexedDB)     │ │
+│  └─────────────┘    └──────────────┬──────────────────────┘ │
+│         │                          │                         │
+│         │           ┌──────────────▼──────────────────────┐ │
+│         │           │  Deploy to GitHub Pages              │ │
+│         │           │  https://...github.io/Projeto-BFD/   │ │
+│         │           └─────────────────────────────────────┘ │
+│         │                                                    │
+│         │           ┌─────────────────────────────────────┐ │
+│         └──────────>│  Build Firebase (Firebase Provider) │ │
+│                     └──────────────┬──────────────────────┘ │
+│                                    │                         │
+│                     ┌──────────────▼──────────────────────┐ │
+│                     │  Deploy to Firebase Hosting          │ │
+│                     │  https://<project>.web.app/          │ │
+│                     └─────────────────────────────────────┘ │
+│                                                              │
+└─────────────────────────────────────────────────────────────┘
+```
 
 ## Diagramas de Sequência
 
