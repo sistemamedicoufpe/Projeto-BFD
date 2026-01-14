@@ -1,4 +1,5 @@
 import { useState, useEffect, useCallback, useRef } from 'react';
+import { useNavigate } from 'react-router-dom';
 import { Layout } from '@/components/layout';
 import { Card, CardHeader, CardContent, Button, Input } from '@/components/ui';
 import { getReportsProvider } from '@/services/providers/factory/provider-factory';
@@ -6,6 +7,7 @@ import type { IReportsProvider } from '@/services/providers/types';
 import type { Report } from '@neurocare/shared-types';
 
 export function ReportsPage() {
+  const navigate = useNavigate();
   const [reports, setReports] = useState<Report[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
@@ -104,7 +106,7 @@ export function ReportsPage() {
             <h1 className="text-3xl font-bold text-gray-900">Relatórios</h1>
             <p className="text-gray-600 mt-2">Gere e gerencie relatórios clínicos</p>
           </div>
-          <Button>
+          <Button onClick={() => navigate('/relatorios/novo')}>
             <span className="mr-2">+</span>
             Novo Relatório
           </Button>

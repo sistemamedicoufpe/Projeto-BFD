@@ -23,21 +23,21 @@ export function Sidebar() {
 
   return (
     <aside
-      className={`fixed left-0 top-0 h-screen bg-white border-r border-gray-200 transition-all duration-300 z-40 ${
+      className={`fixed left-0 top-0 h-screen bg-white dark:bg-gray-800 border-r border-gray-200 dark:border-gray-700 transition-all duration-300 z-40 ${
         collapsed ? 'w-20' : 'w-64'
       }`}
     >
       {/* Header */}
-      <div className="h-16 flex items-center justify-between px-4 border-b border-gray-200">
+      <div className="h-16 flex items-center justify-between px-4 border-b border-gray-200 dark:border-gray-700">
         {!collapsed && (
           <div className="flex items-center gap-2">
             <span className="text-2xl">🧠</span>
-            <span className="font-bold text-lg text-gray-900">NeuroDiag</span>
+            <span className="font-bold text-lg text-gray-900 dark:text-gray-100">NeuroDiag</span>
           </div>
         )}
         <button
           onClick={() => setCollapsed(!collapsed)}
-          className="p-2 hover:bg-gray-100 rounded-lg transition-colors"
+          className="p-2 hover:bg-gray-100 dark:hover:bg-gray-700 rounded-lg transition-colors"
           title={collapsed ? 'Expandir' : 'Recolher'}
         >
           <span className="text-xl">{collapsed ? '→' : '←'}</span>
@@ -54,8 +54,8 @@ export function Sidebar() {
             className={({ isActive }: { isActive: boolean }) =>
               `flex items-center gap-3 px-4 py-3 transition-colors ${
                 isActive
-                  ? 'bg-primary-50 text-primary-700 border-r-4 border-primary-600'
-                  : 'text-gray-700 hover:bg-gray-50'
+                  ? 'bg-primary-50 dark:bg-primary-900/30 text-primary-700 dark:text-primary-400 border-r-4 border-primary-600'
+                  : 'text-gray-700 dark:text-gray-300 hover:bg-gray-50 dark:hover:bg-gray-700'
               }`
             }
           >
@@ -66,7 +66,7 @@ export function Sidebar() {
       </nav>
 
       {/* User section */}
-      <div className="absolute bottom-0 left-0 right-0 p-4 border-t border-gray-200">
+      <div className="absolute bottom-0 left-0 right-0 p-4 border-t border-gray-200 dark:border-gray-700">
         {!collapsed ? (
           <div className="flex items-center justify-between">
             <div className="flex items-center gap-3">
@@ -74,13 +74,13 @@ export function Sidebar() {
                 {user?.nome.charAt(0).toUpperCase()}
               </div>
               <div className="flex-1 min-w-0">
-                <p className="text-sm font-medium text-gray-900 truncate">{user?.nome}</p>
-                <p className="text-xs text-gray-500 truncate">{user?.email}</p>
+                <p className="text-sm font-medium text-gray-900 dark:text-gray-100 truncate">{user?.nome}</p>
+                <p className="text-xs text-gray-500 dark:text-gray-400 truncate">{user?.email}</p>
               </div>
             </div>
             <button
               onClick={logout}
-              className="p-2 text-gray-400 hover:text-red-600 hover:bg-red-50 rounded-lg transition-colors"
+              className="p-2 text-gray-400 hover:text-red-600 hover:bg-red-50 dark:hover:bg-red-900/30 rounded-lg transition-colors"
               title="Sair"
             >
               <span className="text-xl">🚪</span>
@@ -89,7 +89,7 @@ export function Sidebar() {
         ) : (
           <button
             onClick={logout}
-            className="w-full p-2 text-gray-400 hover:text-red-600 hover:bg-red-50 rounded-lg transition-colors"
+            className="w-full p-2 text-gray-400 hover:text-red-600 hover:bg-red-50 dark:hover:bg-red-900/30 rounded-lg transition-colors"
             title="Sair"
           >
             <span className="text-2xl">🚪</span>

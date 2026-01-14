@@ -23,7 +23,8 @@
     /* Path alias */
     "baseUrl": ".",
     "paths": {
-      "@/*": ["./src/*"]
+      "@/*": ["./src/*"],
+      "@neurocare/shared-types": ["../../packages/shared-types/src/index.ts"]
     }
   },
   "include": ["src"],

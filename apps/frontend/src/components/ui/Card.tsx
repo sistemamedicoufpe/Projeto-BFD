@@ -16,7 +16,7 @@ export function Card({ children, className, padding = 'md' }: CardProps) {
   }
 
   return (
-    <div className={cn('bg-white rounded-lg shadow-md', paddings[padding], className)}>
+    <div className={cn('bg-white dark:bg-gray-800 rounded-lg shadow-md dark:shadow-gray-900/50', paddings[padding], className)}>
       {children}
     </div>
   )
@@ -33,8 +33,8 @@ export function CardHeader({ title, subtitle, action, className }: CardHeaderPro
   return (
     <div className={cn('flex items-start justify-between mb-4', className)}>
       <div>
-        <h2 className="text-xl font-semibold text-gray-900">{title}</h2>
-        {subtitle && <p className="text-sm text-gray-500 mt-1">{subtitle}</p>}
+        <h2 className="text-xl font-semibold text-gray-900 dark:text-gray-100">{title}</h2>
+        {subtitle && <p className="text-sm text-gray-500 dark:text-gray-400 mt-1">{subtitle}</p>}
       </div>
       {action && <div>{action}</div>}
     </div>
@@ -57,7 +57,7 @@ interface CardFooterProps {
 
 export function CardFooter({ children, className }: CardFooterProps) {
   return (
-    <div className={cn('mt-6 pt-4 border-t border-gray-200', className)}>
+    <div className={cn('mt-6 pt-4 border-t border-gray-200 dark:border-gray-700', className)}>
       {children}
     </div>
   )

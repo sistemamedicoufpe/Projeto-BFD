@@ -15,7 +15,7 @@ export function Toggle({ checked, onChange, label, description, disabled = false
         {label && (
           <span className={cn(
             "text-sm font-medium",
-            disabled ? "text-gray-400" : "text-gray-700"
+            disabled ? "text-gray-400 dark:text-gray-500" : "text-gray-700 dark:text-gray-300"
           )}>
             {label}
           </span>
@@ -23,7 +23,7 @@ export function Toggle({ checked, onChange, label, description, disabled = false
         {description && (
           <p className={cn(
             "text-sm mt-0.5",
-            disabled ? "text-gray-300" : "text-gray-500"
+            disabled ? "text-gray-300 dark:text-gray-600" : "text-gray-500 dark:text-gray-400"
           )}>
             {description}
           </p>
@@ -36,8 +36,8 @@ export function Toggle({ checked, onChange, label, description, disabled = false
         disabled={disabled}
         onClick={() => !disabled && onChange(!checked)}
         className={cn(
-          "relative inline-flex h-6 w-11 flex-shrink-0 cursor-pointer rounded-full border-2 border-transparent transition-colors duration-200 ease-in-out focus:outline-none focus:ring-2 focus:ring-primary-500 focus:ring-offset-2",
-          checked ? "bg-primary-600" : "bg-gray-200",
+          "relative inline-flex h-6 w-11 flex-shrink-0 cursor-pointer rounded-full border-2 border-transparent transition-colors duration-200 ease-in-out focus:outline-none focus:ring-2 focus:ring-primary-500 focus:ring-offset-2 dark:focus:ring-offset-gray-800",
+          checked ? "bg-primary-600" : "bg-gray-200 dark:bg-gray-600",
           disabled && "opacity-50 cursor-not-allowed"
         )}
       >

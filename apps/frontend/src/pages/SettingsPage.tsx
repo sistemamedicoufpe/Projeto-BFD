@@ -1,40 +1,23 @@
-import { useState, useEffect, useCallback } from 'react'
+import { useState, useEffect } from 'react'
 import { Layout } from '@/components/layout'
 import { Card, CardHeader, CardContent, Button, Input, Toggle, Select } from '@/components/ui'
 import { useAuth } from '@/contexts/AuthContext'
-import type { AppSettings } from '@/types'
-
-const SETTINGS_KEY = 'neurocare_settings'
-
-const defaultSettings: AppSettings = {
-  geral: {
-    tema: 'light',
-    idioma: 'pt-BR',
-    notificacoes: true,
-  },
-  seguranca: {
-    autenticacaoDuploFator: false,
-    tempoSessao: 30,
-    backupAutomatico: true,
-    frequenciaBackup: 'diario',
-  },
-  privacidade: {
-    anonimizarDados: false,
-    consentimentoColeta: true,
-    compartilharAnonimos: false,
-  },
-  ia: {
-    habilitado: true,
-    modelo: 'gpt-4',
-    confiancaMinima: 70,
-  },
-}
+import { useSettings } from '@/contexts/SettingsContext'
 
 export function SettingsPage() {
   const { user } = useAuth()
-  const [settings, setSettings] = useState<AppSettings>(defaultSettings)
-  const [saving, setSaving] = useState(false)
-  const [saved, setSaved] = useState(false)
+  const {
+    settings,
+    updateGeral,
+    updateSeguranca,
+    updatePrivacidade,
+    updateIA,
+    resetSettings,
+    isOnline,
+    isSyncing,
+    triggerSync,
+  } = useSettings()
+
   const [profileData, setProfileData] = useState({
     nome: '',
     email: '',
@@ -43,19 +26,8 @@ export function SettingsPage() {
     telefone: '',
   })
 
-  // Carregar configurações do localStorage
+  // Carregar dados do perfil do usuário
   useEffect(() => {
-    const savedSettings = localStorage.getItem(SETTINGS_KEY)
-    if (savedSettings) {
-      try {
-        const parsed = JSON.parse(savedSettings)
-        setSettings({ ...defaultSettings, ...parsed })
-      } catch (error) {
-        console.error('Erro ao carregar configurações:', error)
-      }
-    }
-
-    // Carregar dados do perfil do usuário
     if (user) {
       setProfileData({
         nome: user.nome || '',
@@ -66,77 +38,6 @@ export function SettingsPage() {
       })
     }
   }, [user])
-
-  // Salvar configurações
-  const saveSettings = useCallback(async () => {
-    setSaving(true)
-    setSaved(false)
-    try {
-      localStorage.setItem(SETTINGS_KEY, JSON.stringify(settings))
-
-      // Aplicar tema
-      if (settings.geral.tema === 'dark') {
-        document.documentElement.classList.add('dark')
-      } else if (settings.geral.tema === 'light') {
-        document.documentElement.classList.remove('dark')
-      } else {
-        // Auto - detectar preferência do sistema
-        const prefersDark = window.matchMedia('(prefers-color-scheme: dark)').matches
-        document.documentElement.classList.toggle('dark', prefersDark)
-      }
-
-      setSaved(true)
-      setTimeout(() => setSaved(false), 3000)
-    } catch (error) {
-      console.error('Erro ao salvar configurações:', error)
-    } finally {
-      setSaving(false)
-    }
-  }, [settings])
-
-  // Atualizar configuração geral
-  const updateGeral = <K extends keyof AppSettings['geral']>(
-    key: K,
-    value: AppSettings['geral'][K]
-  ) => {
-    setSettings(prev => ({
-      ...prev,
-      geral: { ...prev.geral, [key]: value },
-    }))
-  }
-
-  // Atualizar configuração de segurança
-  const updateSeguranca = <K extends keyof AppSettings['seguranca']>(
-    key: K,
-    value: AppSettings['seguranca'][K]
-  ) => {
-    setSettings(prev => ({
-      ...prev,
-      seguranca: { ...prev.seguranca, [key]: value },
-    }))
-  }
-
-  // Atualizar configuração de privacidade
-  const updatePrivacidade = <K extends keyof AppSettings['privacidade']>(
-    key: K,
-    value: AppSettings['privacidade'][K]
-  ) => {
-    setSettings(prev => ({
-      ...prev,
-      privacidade: { ...prev.privacidade, [key]: value },
-    }))
-  }
-
-  // Atualizar configuração de IA
-  const updateIA = <K extends keyof AppSettings['ia']>(
-    key: K,
-    value: AppSettings['ia'][K]
-  ) => {
-    setSettings(prev => ({
-      ...prev,
-      ia: { ...prev.ia, [key]: value },
-    }))
-  }
 
   // Exportar dados
   const handleExportData = async () => {
@@ -181,23 +82,27 @@ export function SettingsPage() {
     }
   }
 
+  // Sincronizar dados
+  const handleSync = async () => {
+    await triggerSync()
+  }
+
   return (
     <Layout>
       <div className="space-y-6">
         <div className="flex items-center justify-between">
           <div>
-            <h1 className="text-3xl font-bold text-gray-900">Configurações</h1>
-            <p className="text-gray-600 mt-2">Gerencie as configurações do sistema</p>
+            <h1 className="text-3xl font-bold text-gray-900 dark:text-gray-100">Configurações</h1>
+            <p className="text-gray-600 dark:text-gray-400 mt-2">Gerencie as configurações do sistema</p>
           </div>
           <div className="flex items-center gap-3">
-            {saved && (
-              <span className="text-green-600 text-sm font-medium">
-                Configurações salvas!
-              </span>
-            )}
-            <Button onClick={saveSettings} loading={saving}>
-              Salvar Configurações
-            </Button>
+            <span className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium ${
+              isOnline
+                ? 'bg-green-100 text-green-800 dark:bg-green-900 dark:text-green-200'
+                : 'bg-red-100 text-red-800 dark:bg-red-900 dark:text-red-200'
+            }`}>
+              {isOnline ? 'Online' : 'Offline'}
+            </span>
           </div>
         </div>
 
@@ -304,7 +209,7 @@ export function SettingsPage() {
                 />
 
                 <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-1">
+                  <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
                     Tempo de sessão (minutos)
                   </label>
                   <input
@@ -314,9 +219,9 @@ export function SettingsPage() {
                     step="5"
                     value={settings.seguranca.tempoSessao}
                     onChange={(e) => updateSeguranca('tempoSessao', Number(e.target.value))}
-                    className="w-full h-2 bg-gray-200 rounded-lg appearance-none cursor-pointer accent-primary-600"
+                    className="w-full h-2 bg-gray-200 dark:bg-gray-700 rounded-lg appearance-none cursor-pointer accent-primary-600"
                   />
-                  <div className="flex justify-between text-xs text-gray-500 mt-1">
+                  <div className="flex justify-between text-xs text-gray-500 dark:text-gray-400 mt-1">
                     <span>5 min</span>
                     <span className="font-medium text-primary-600">{settings.seguranca.tempoSessao} min</span>
                     <span>120 min</span>
@@ -343,7 +248,7 @@ export function SettingsPage() {
                   />
                 )}
 
-                <div className="pt-3 border-t">
+                <div className="pt-3 border-t dark:border-gray-700">
                   <Button
                     variant="outline"
                     size="sm"
@@ -385,8 +290,8 @@ export function SettingsPage() {
                   onChange={(checked) => updatePrivacidade('compartilharAnonimos', checked)}
                 />
 
-                <div className="pt-3 border-t space-y-2">
-                  <p className="text-sm text-gray-600 mb-3">
+                <div className="pt-3 border-t dark:border-gray-700 space-y-2">
+                  <p className="text-sm text-gray-600 dark:text-gray-400 mb-3">
                     Conforme a LGPD, você tem direito de acessar, corrigir ou excluir seus dados.
                   </p>
                   <div className="flex gap-2">
@@ -436,14 +341,14 @@ export function SettingsPage() {
                       value={settings.ia.modelo}
                       onChange={(value) => updateIA('modelo', value)}
                       options={[
-                        { value: 'gpt-4', label: 'GPT-4 (Mais preciso)' },
-                        { value: 'gpt-3.5', label: 'GPT-3.5 (Mais rápido)' },
-                        { value: 'local', label: 'Modelo Local (Offline)' },
+                        { value: 'local', label: 'Modelo Local (TensorFlow.js - Offline)' },
+                        { value: 'gpt-4', label: 'GPT-4 (Mais preciso - Requer internet)' },
+                        { value: 'gpt-3.5', label: 'GPT-3.5 (Mais rápido - Requer internet)' },
                       ]}
                     />
 
                     <div>
-                      <label className="block text-sm font-medium text-gray-700 mb-1">
+                      <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
                         Confiança mínima para sugestões
                       </label>
                       <input
@@ -453,22 +358,31 @@ export function SettingsPage() {
                         step="5"
                         value={settings.ia.confiancaMinima}
                         onChange={(e) => updateIA('confiancaMinima', Number(e.target.value))}
-                        className="w-full h-2 bg-gray-200 rounded-lg appearance-none cursor-pointer accent-primary-600"
+                        className="w-full h-2 bg-gray-200 dark:bg-gray-700 rounded-lg appearance-none cursor-pointer accent-primary-600"
                       />
-                      <div className="flex justify-between text-xs text-gray-500 mt-1">
+                      <div className="flex justify-between text-xs text-gray-500 dark:text-gray-400 mt-1">
                         <span>50%</span>
                         <span className="font-medium text-primary-600">{settings.ia.confiancaMinima}%</span>
                         <span>95%</span>
                       </div>
-                      <p className="text-xs text-gray-500 mt-2">
+                      <p className="text-xs text-gray-500 dark:text-gray-400 mt-2">
                         Sugestões abaixo deste valor não serão exibidas
                       </p>
                     </div>
+
+                    {settings.ia.modelo === 'local' && (
+                      <div className="bg-blue-50 dark:bg-blue-900/30 p-4 rounded-lg">
+                        <p className="text-sm text-blue-800 dark:text-blue-200">
+                          <strong>Modelo Local:</strong> Utiliza TensorFlow.js para análise offline.
+                          O modelo é executado diretamente no navegador, garantindo privacidade total dos dados.
+                        </p>
+                      </div>
+                    )}
                   </>
                 )}
 
-                <div className="bg-blue-50 p-4 rounded-lg">
-                  <p className="text-sm text-blue-800">
+                <div className="bg-yellow-50 dark:bg-yellow-900/30 p-4 rounded-lg">
+                  <p className="text-sm text-yellow-800 dark:text-yellow-200">
                     <strong>Nota:</strong> O assistente de IA é uma ferramenta de apoio e não substitui
                     a avaliação clínica do profissional de saúde.
                   </p>
@@ -485,10 +399,10 @@ export function SettingsPage() {
             />
             <CardContent>
               <div className="space-y-4">
-                <div className="flex items-center justify-between p-3 bg-gray-50 rounded-lg">
+                <div className="flex items-center justify-between p-3 bg-gray-50 dark:bg-gray-800 rounded-lg">
                   <div>
-                    <p className="text-sm font-medium text-gray-700">Cache do aplicativo</p>
-                    <p className="text-xs text-gray-500">Limpar dados temporários</p>
+                    <p className="text-sm font-medium text-gray-700 dark:text-gray-300">Cache do aplicativo</p>
+                    <p className="text-xs text-gray-500 dark:text-gray-400">Limpar dados temporários</p>
                   </div>
                   <Button
                     variant="outline"
@@ -499,34 +413,35 @@ export function SettingsPage() {
                   </Button>
                 </div>
 
-                <div className="flex items-center justify-between p-3 bg-gray-50 rounded-lg">
+                <div className="flex items-center justify-between p-3 bg-gray-50 dark:bg-gray-800 rounded-lg">
                   <div>
-                    <p className="text-sm font-medium text-gray-700">Sincronização</p>
-                    <p className="text-xs text-gray-500">Forçar sincronização com servidor</p>
+                    <p className="text-sm font-medium text-gray-700 dark:text-gray-300">Sincronização</p>
+                    <p className="text-xs text-gray-500 dark:text-gray-400">
+                      {isOnline ? 'Forçar sincronização com servidor' : 'Sem conexão com internet'}
+                    </p>
                   </div>
                   <Button
                     variant="outline"
                     size="sm"
-                    onClick={() => {
-                      alert('Sincronização iniciada!')
-                    }}
+                    onClick={handleSync}
+                    disabled={!isOnline || isSyncing}
+                    loading={isSyncing}
                   >
-                    Sincronizar agora
+                    {isSyncing ? 'Sincronizando...' : 'Sincronizar agora'}
                   </Button>
                 </div>
 
-                <div className="flex items-center justify-between p-3 bg-gray-50 rounded-lg">
+                <div className="flex items-center justify-between p-3 bg-gray-50 dark:bg-gray-800 rounded-lg">
                   <div>
-                    <p className="text-sm font-medium text-gray-700">Restaurar configurações</p>
-                    <p className="text-xs text-gray-500">Volta para configurações padrão</p>
+                    <p className="text-sm font-medium text-gray-700 dark:text-gray-300">Restaurar configurações</p>
+                    <p className="text-xs text-gray-500 dark:text-gray-400">Volta para configurações padrão</p>
                   </div>
                   <Button
                     variant="danger"
                     size="sm"
                     onClick={() => {
                       if (confirm('Restaurar todas as configurações para os valores padrão?')) {
-                        setSettings(defaultSettings)
-                        localStorage.setItem(SETTINGS_KEY, JSON.stringify(defaultSettings))
+                        resetSettings()
                         alert('Configurações restauradas!')
                       }
                     }}
@@ -545,20 +460,22 @@ export function SettingsPage() {
           <CardContent>
             <div className="grid grid-cols-2 md:grid-cols-4 gap-4 text-sm">
               <div>
-                <p className="text-gray-500">Versão</p>
-                <p className="font-medium">2.0.0</p>
+                <p className="text-gray-500 dark:text-gray-400">Versão</p>
+                <p className="font-medium text-gray-900 dark:text-gray-100">2.0.0</p>
               </div>
               <div>
-                <p className="text-gray-500">Ambiente</p>
-                <p className="font-medium">{import.meta.env.MODE}</p>
+                <p className="text-gray-500 dark:text-gray-400">Ambiente</p>
+                <p className="font-medium text-gray-900 dark:text-gray-100">{import.meta.env.MODE}</p>
               </div>
               <div>
-                <p className="text-gray-500">Banco de dados</p>
-                <p className="font-medium">{import.meta.env.VITE_DATABASE_PROVIDER || 'indexeddb'}</p>
+                <p className="text-gray-500 dark:text-gray-400">Banco de dados</p>
+                <p className="font-medium text-gray-900 dark:text-gray-100">{import.meta.env.VITE_DATABASE_PROVIDER || 'indexeddb'}</p>
               </div>
               <div>
-                <p className="text-gray-500">Última atualização</p>
-                <p className="font-medium">Janeiro 2026</p>
+                <p className="text-gray-500 dark:text-gray-400">Status</p>
+                <p className={`font-medium ${isOnline ? 'text-green-600' : 'text-red-600'}`}>
+                  {isOnline ? 'Online' : 'Offline'}
+                </p>
               </div>
             </div>
           </CardContent>

@@ -1,5 +1,6 @@
 import { BrowserRouter, Routes, Route, Navigate } from 'react-router-dom'
 import { AuthProvider } from './contexts/AuthContext'
+import { SettingsProvider } from './contexts/SettingsContext'
 import { ProtectedRoute } from './components/ProtectedRoute'
 
 // Pages
@@ -12,6 +13,7 @@ import { PatientEditPage } from './pages/PatientEditPage'
 import { EvaluationsPage } from './pages/EvaluationsPage'
 import { EvaluationCreatePage } from './pages/EvaluationCreatePage'
 import { ReportsPage } from './pages/ReportsPage'
+import { ReportCreatePage } from './pages/ReportCreatePage'
 import { SettingsPage } from './pages/SettingsPage'
 import { HelpPage } from './pages/HelpPage'
 
@@ -21,8 +23,9 @@ const basename = import.meta.env.BASE_URL || '/'
 function App() {
   return (
     <BrowserRouter basename={basename}>
-      <AuthProvider>
-        <Routes>
+      <SettingsProvider>
+        <AuthProvider>
+          <Routes>
           {/* Public routes */}
           <Route path="/login" element={<LoginPage />} />
           <Route path="/registro" element={<RegisterPage />} />
@@ -85,6 +88,14 @@ function App() {
             }
           />
           <Route
+            path="/relatorios/novo"
+            element={
+              <ProtectedRoute>
+                <ReportCreatePage />
+              </ProtectedRoute>
+            }
+          />
+          <Route
             path="/configuracoes"
             element={
               <ProtectedRoute>
@@ -104,7 +115,8 @@ function App() {
           {/* Catch all */}
           <Route path="*" element={<Navigate to="/" replace />} />
         </Routes>
-      </AuthProvider>
+        </AuthProvider>
+      </SettingsProvider>
     </BrowserRouter>
   )
 }
