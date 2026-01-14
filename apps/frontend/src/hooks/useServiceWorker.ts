@@ -26,7 +26,9 @@ export function useServiceWorker() {
 
   const registerServiceWorker = useCallback(async () => {
     try {
-      const registration = await navigator.serviceWorker.register('/service-worker.js');
+      // Use the base URL from Vite for GitHub Pages compatibility
+      const swPath = `${import.meta.env.BASE_URL}service-worker.js`;
+      const registration = await navigator.serviceWorker.register(swPath);
 
       console.log('Service Worker registered:', registration);
 

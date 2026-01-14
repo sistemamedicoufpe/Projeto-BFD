@@ -2,13 +2,14 @@
 
 const CACHE_NAME = 'neurocare-v1';
 const RUNTIME_CACHE = 'neurocare-runtime-v1';
+const BASE_PATH = '/Projeto-BFD';
 
 // Assets to cache on install
 const PRECACHE_ASSETS = [
-  '/',
-  '/index.html',
-  '/manifest.json',
-  '/favicon.ico',
+  `${BASE_PATH}/`,
+  `${BASE_PATH}/index.html`,
+  `${BASE_PATH}/manifest.json`,
+  `${BASE_PATH}/favicon.ico`,
 ];
 
 // Install event - cache essential assets
@@ -58,7 +59,7 @@ self.addEventListener('fetch', (event) => {
   }
 
   // Skip API requests (handle them separately)
-  if (url.pathname.startsWith('/api/')) {
+  if (url.pathname.startsWith(`${BASE_PATH}/api/`) || url.pathname.startsWith('/api/')) {
     event.respondWith(handleApiRequest(request));
     return;
   }
@@ -84,7 +85,7 @@ self.addEventListener('fetch', (event) => {
               return cachedResponse;
             }
             // Return offline page
-            return caches.match('/index.html');
+            return caches.match(`${BASE_PATH}/index.html`);
           });
         })
     );
@@ -181,9 +182,9 @@ self.addEventListener('push', (event) => {
 
   const options = {
     body: data.body || 'New notification',
-    icon: '/icon-192x192.png',
-    badge: '/icon-72x72.png',
-    data: data.url || '/',
+    icon: `${BASE_PATH}/icon-192x192.png`,
+    badge: `${BASE_PATH}/icon-72x72.png`,
+    data: data.url || `${BASE_PATH}/`,
   };
 
   event.waitUntil(
@@ -198,7 +199,7 @@ self.addEventListener('notificationclick', (event) => {
   event.notification.close();
 
   event.waitUntil(
-    clients.openWindow(event.notification.data || '/')
+    clients.openWindow(event.notification.data || `${BASE_PATH}/`)
   );
 });
 
