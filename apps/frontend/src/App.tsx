@@ -15,9 +15,12 @@ import { ReportsPage } from './pages/ReportsPage'
 import { SettingsPage } from './pages/SettingsPage'
 import { HelpPage } from './pages/HelpPage'
 
+// Basename para GitHub Pages - usa o base path do Vite
+const basename = import.meta.env.BASE_URL || '/'
+
 function App() {
   return (
-    <BrowserRouter>
+    <BrowserRouter basename={basename}>
       <AuthProvider>
         <Routes>
           {/* Public routes */}
