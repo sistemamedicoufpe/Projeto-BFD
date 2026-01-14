@@ -71,9 +71,9 @@ export function SettingsProvider({ children }: SettingsProviderProps) {
 
   // Aplicar tema quando mudar
   useEffect(() => {
-    const applyTheme = () => {
-      const { tema } = settings.geral
+    const tema = settings.geral.tema
 
+    const applyTheme = () => {
       if (tema === 'dark') {
         document.documentElement.classList.add('dark')
         document.documentElement.setAttribute('data-theme', 'dark')
@@ -91,7 +91,7 @@ export function SettingsProvider({ children }: SettingsProviderProps) {
     applyTheme()
 
     // Listener para mudanças na preferência do sistema (modo auto)
-    if (settings.geral.tema === 'auto') {
+    if (tema === 'auto') {
       const mediaQuery = window.matchMedia('(prefers-color-scheme: dark)')
       const handler = () => applyTheme()
       mediaQuery.addEventListener('change', handler)

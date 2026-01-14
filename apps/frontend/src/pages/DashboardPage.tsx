@@ -79,17 +79,17 @@ export function DashboardPage() {
     <Layout>
       <div className="space-y-6">
         <div>
-          <h1 className="text-3xl font-bold text-gray-900">
+          <h1 className="text-3xl font-bold text-gray-900 dark:text-gray-100">
             Bem-vindo, Dr(a). {user?.name || user?.nome}
           </h1>
-          <p className="text-gray-600 mt-2">
+          <p className="text-gray-600 dark:text-gray-400 mt-2">
             Aqui está um resumo das suas atividades
           </p>
         </div>
 
         {/* Error Message */}
         {error && (
-          <div className="bg-red-50 border border-red-200 text-red-700 px-4 py-3 rounded-lg">
+          <div className="bg-red-50 dark:bg-red-900/30 border border-red-200 dark:border-red-800 text-red-700 dark:text-red-300 px-4 py-3 rounded-lg">
             {error}
             <button
               onClick={loadStats}
@@ -104,12 +104,12 @@ export function DashboardPage() {
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
           <Card padding="md">
             <div className="flex items-center gap-4">
-              <div className="w-12 h-12 bg-primary-100 rounded-lg flex items-center justify-center">
+              <div className="w-12 h-12 bg-primary-100 dark:bg-primary-900/50 rounded-lg flex items-center justify-center">
                 <span className="text-2xl">👥</span>
               </div>
               <div>
-                <p className="text-sm text-gray-600">Total de Pacientes</p>
-                <p className="text-2xl font-bold text-gray-900">
+                <p className="text-sm text-gray-600 dark:text-gray-400">Total de Pacientes</p>
+                <p className="text-2xl font-bold text-gray-900 dark:text-gray-100">
                   {loading ? '...' : stats.totalPacientes}
                 </p>
               </div>
@@ -118,12 +118,12 @@ export function DashboardPage() {
 
           <Card padding="md">
             <div className="flex items-center gap-4">
-              <div className="w-12 h-12 bg-secondary-100 rounded-lg flex items-center justify-center">
+              <div className="w-12 h-12 bg-secondary-100 dark:bg-secondary-900/50 rounded-lg flex items-center justify-center">
                 <span className="text-2xl">📋</span>
               </div>
               <div>
-                <p className="text-sm text-gray-600">Avaliações em Andamento</p>
-                <p className="text-2xl font-bold text-gray-900">
+                <p className="text-sm text-gray-600 dark:text-gray-400">Avaliações em Andamento</p>
+                <p className="text-2xl font-bold text-gray-900 dark:text-gray-100">
                   {loading ? '...' : stats.avaliacoesHoje}
                 </p>
               </div>
@@ -132,12 +132,12 @@ export function DashboardPage() {
 
           <Card padding="md">
             <div className="flex items-center gap-4">
-              <div className="w-12 h-12 bg-orange-100 rounded-lg flex items-center justify-center">
+              <div className="w-12 h-12 bg-orange-100 dark:bg-orange-900/50 rounded-lg flex items-center justify-center">
                 <span className="text-2xl">📄</span>
               </div>
               <div>
-                <p className="text-sm text-gray-600">Relatórios Pendentes</p>
-                <p className="text-2xl font-bold text-gray-900">
+                <p className="text-sm text-gray-600 dark:text-gray-400">Relatórios Pendentes</p>
+                <p className="text-2xl font-bold text-gray-900 dark:text-gray-100">
                   {loading ? '...' : stats.relatoriosPendentes}
                 </p>
               </div>
@@ -146,12 +146,12 @@ export function DashboardPage() {
 
           <Card padding="md">
             <div className="flex items-center gap-4">
-              <div className="w-12 h-12 bg-green-100 rounded-lg flex items-center justify-center">
+              <div className="w-12 h-12 bg-green-100 dark:bg-green-900/50 rounded-lg flex items-center justify-center">
                 <span className="text-2xl">📊</span>
               </div>
               <div>
-                <p className="text-sm text-gray-600">Total Avaliações</p>
-                <p className="text-2xl font-bold text-gray-900">
+                <p className="text-sm text-gray-600 dark:text-gray-400">Total Avaliações</p>
+                <p className="text-2xl font-bold text-gray-900 dark:text-gray-100">
                   {loading ? '...' : stats.totalAvaliacoes}
                 </p>
               </div>
@@ -164,7 +164,7 @@ export function DashboardPage() {
           <Card>
             <CardHeader title="Atividades Recentes" />
             <CardContent>
-              <div className="text-center py-8 text-gray-500">
+              <div className="text-center py-8 text-gray-500 dark:text-gray-400">
                 <p className="text-4xl mb-2">📊</p>
                 <p>Nenhuma atividade recente</p>
               </div>
@@ -174,7 +174,7 @@ export function DashboardPage() {
           <Card>
             <CardHeader title="Próximas Consultas" />
             <CardContent>
-              <div className="text-center py-8 text-gray-500">
+              <div className="text-center py-8 text-gray-500 dark:text-gray-400">
                 <p className="text-4xl mb-2">📅</p>
                 <p>Nenhuma consulta agendada</p>
               </div>

@@ -1,6 +1,6 @@
 import { useState, useEffect, useCallback } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { Button, Input, Card, CardHeader, CardContent } from '@/components/ui';
+import { Button, Input, Card, CardHeader, CardContent, TagInput } from '@/components/ui';
 import { patientsApi } from '../../services/api';
 import type { Gender } from '@neurocare/shared-types';
 
@@ -24,12 +24,50 @@ interface FormData {
   cidade: string;
   estado: string;
   historicoMedico: string;
-  alergias: string; // comma-separated
-  medicamentosEmUso: string; // comma-separated
+  alergias: string[];
+  medicamentosEmUso: string[];
   nomeResponsavel: string;
   telefoneResponsavel: string;
   observacoes: string;
 }
+
+// Common suggestions for allergies and medications
+const ALLERGY_SUGGESTIONS = [
+  'Penicilina',
+  'Dipirona',
+  'AAS (Aspirina)',
+  'Ibuprofeno',
+  'Paracetamol',
+  'Sulfa',
+  'Contraste iodado',
+  'Látex',
+  'Frutos do mar',
+  'Amendoim',
+  'Leite',
+  'Ovo',
+  'Glúten',
+  'Soja',
+];
+
+const MEDICATION_SUGGESTIONS = [
+  'Losartana 50mg',
+  'Metformina 850mg',
+  'Omeprazol 20mg',
+  'Sinvastatina 20mg',
+  'AAS 100mg',
+  'Levotiroxina 50mcg',
+  'Enalapril 10mg',
+  'Hidroclorotiazida 25mg',
+  'Atenolol 50mg',
+  'Amitriptilina 25mg',
+  'Fluoxetina 20mg',
+  'Clonazepam 2mg',
+  'Donepezila 10mg',
+  'Rivastigmina 6mg',
+  'Memantina 10mg',
+  'Quetiapina 25mg',
+  'Risperidona 1mg',
+];
 
 export function PatientForm({ patientId, onSuccess, onCancel }: PatientFormProps) {
   const navigate = useNavigate();
@@ -50,8 +88,8 @@ export function PatientForm({ patientId, onSuccess, onCancel }: PatientFormProps
     cidade: '',
     estado: '',
     historicoMedico: '',
-    alergias: '',
-    medicamentosEmUso: '',
+    alergias: [],
+    medicamentosEmUso: [],
     nomeResponsavel: '',
     telefoneResponsavel: '',
     observacoes: '',
@@ -79,8 +117,8 @@ export function PatientForm({ patientId, onSuccess, onCancel }: PatientFormProps
         cidade: patient.cidade || '',
         estado: patient.estado || '',
         historicoMedico: patient.historicoMedico || '',
-        alergias: patient.alergias?.join(', ') || '',
-        medicamentosEmUso: patient.medicamentosEmUso?.join(', ') || '',
+        alergias: patient.alergias || [],
+        medicamentosEmUso: patient.medicamentosEmUso || [],
         nomeResponsavel: patient.nomeResponsavel || '',
         telefoneResponsavel: patient.telefoneResponsavel || '',
         observacoes: patient.observacoes || '',
@@ -102,6 +140,14 @@ export function PatientForm({ patientId, onSuccess, onCancel }: PatientFormProps
   const handleChange = (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement | HTMLSelectElement>) => {
     const { name, value } = e.target;
     setFormData(prev => ({ ...prev, [name]: value }));
+  };
+
+  const handleAllergyChange = (alergias: string[]) => {
+    setFormData(prev => ({ ...prev, alergias }));
+  };
+
+  const handleMedicationChange = (medicamentosEmUso: string[]) => {
+    setFormData(prev => ({ ...prev, medicamentosEmUso }));
   };
 
   const validateForm = (): string | null => {
@@ -155,12 +201,8 @@ export function PatientForm({ patientId, onSuccess, onCancel }: PatientFormProps
         cidade: formData.cidade.trim() || undefined,
         estado: formData.estado.trim() || undefined,
         historicoMedico: formData.historicoMedico.trim() || undefined,
-        alergias: formData.alergias
-          ? formData.alergias.split(',').map(a => a.trim()).filter(a => a)
-          : undefined,
-        medicamentosEmUso: formData.medicamentosEmUso
-          ? formData.medicamentosEmUso.split(',').map(m => m.trim()).filter(m => m)
-          : undefined,
+        alergias: formData.alergias.length > 0 ? formData.alergias : undefined,
+        medicamentosEmUso: formData.medicamentosEmUso.length > 0 ? formData.medicamentosEmUso : undefined,
         nomeResponsavel: formData.nomeResponsavel.trim() || undefined,
         telefoneResponsavel: formData.telefoneResponsavel.trim() || undefined,
         observacoes: formData.observacoes.trim() || undefined,
@@ -201,7 +243,7 @@ export function PatientForm({ patientId, onSuccess, onCancel }: PatientFormProps
     return (
       <div className="text-center py-12">
         <div className="inline-block animate-spin rounded-full h-12 w-12 border-b-2 border-primary-600"></div>
-        <p className="mt-4 text-gray-600">Carregando dados do paciente...</p>
+        <p className="mt-4 text-gray-600 dark:text-gray-400">Carregando dados do paciente...</p>
       </div>
     );
   }
@@ -209,7 +251,7 @@ export function PatientForm({ patientId, onSuccess, onCancel }: PatientFormProps
   return (
     <form onSubmit={handleSubmit} className="space-y-6">
       {error && (
-        <div className="bg-red-50 border border-red-200 text-red-700 px-4 py-3 rounded-lg">
+        <div className="bg-red-50 dark:bg-red-900/30 border border-red-200 dark:border-red-800 text-red-700 dark:text-red-300 px-4 py-3 rounded-lg">
           {error}
         </div>
       )}
@@ -220,7 +262,7 @@ export function PatientForm({ patientId, onSuccess, onCancel }: PatientFormProps
         <CardContent>
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
             <div>
-              <label htmlFor="nome" className="block text-sm font-medium text-gray-700 mb-1">
+              <label htmlFor="nome" className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
                 Nome Completo *
               </label>
               <Input
@@ -235,7 +277,7 @@ export function PatientForm({ patientId, onSuccess, onCancel }: PatientFormProps
             </div>
 
             <div>
-              <label htmlFor="cpf" className="block text-sm font-medium text-gray-700 mb-1">
+              <label htmlFor="cpf" className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
                 CPF *
               </label>
               <Input
@@ -251,7 +293,7 @@ export function PatientForm({ patientId, onSuccess, onCancel }: PatientFormProps
             </div>
 
             <div>
-              <label htmlFor="rg" className="block text-sm font-medium text-gray-700 mb-1">
+              <label htmlFor="rg" className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
                 RG
               </label>
               <Input
@@ -265,7 +307,7 @@ export function PatientForm({ patientId, onSuccess, onCancel }: PatientFormProps
             </div>
 
             <div>
-              <label htmlFor="dataNascimento" className="block text-sm font-medium text-gray-700 mb-1">
+              <label htmlFor="dataNascimento" className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
                 Data de Nascimento *
               </label>
               <Input
@@ -279,7 +321,7 @@ export function PatientForm({ patientId, onSuccess, onCancel }: PatientFormProps
             </div>
 
             <div>
-              <label htmlFor="genero" className="block text-sm font-medium text-gray-700 mb-1">
+              <label htmlFor="genero" className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
                 Gênero *
               </label>
               <select
@@ -288,7 +330,7 @@ export function PatientForm({ patientId, onSuccess, onCancel }: PatientFormProps
                 value={formData.genero}
                 onChange={handleChange}
                 required
-                className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary-500 focus:border-transparent"
+                className="w-full px-4 py-2 border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-700 text-gray-900 dark:text-gray-100 focus:ring-2 focus:ring-primary-500 focus:border-transparent"
               >
                 <option value="">Selecione...</option>
                 <option value="MALE">Masculino</option>
@@ -307,7 +349,7 @@ export function PatientForm({ patientId, onSuccess, onCancel }: PatientFormProps
         <CardContent>
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
             <div>
-              <label htmlFor="email" className="block text-sm font-medium text-gray-700 mb-1">
+              <label htmlFor="email" className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
                 Email
               </label>
               <Input
@@ -321,7 +363,7 @@ export function PatientForm({ patientId, onSuccess, onCancel }: PatientFormProps
             </div>
 
             <div>
-              <label htmlFor="telefone" className="block text-sm font-medium text-gray-700 mb-1">
+              <label htmlFor="telefone" className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
                 Telefone
               </label>
               <Input
@@ -335,7 +377,7 @@ export function PatientForm({ patientId, onSuccess, onCancel }: PatientFormProps
             </div>
 
             <div>
-              <label htmlFor="celular" className="block text-sm font-medium text-gray-700 mb-1">
+              <label htmlFor="celular" className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
                 Celular
               </label>
               <Input
@@ -357,7 +399,7 @@ export function PatientForm({ patientId, onSuccess, onCancel }: PatientFormProps
         <CardContent>
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
             <div className="md:col-span-2">
-              <label htmlFor="enderecoCompleto" className="block text-sm font-medium text-gray-700 mb-1">
+              <label htmlFor="enderecoCompleto" className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
                 Endereço Completo
               </label>
               <Input
@@ -371,7 +413,7 @@ export function PatientForm({ patientId, onSuccess, onCancel }: PatientFormProps
             </div>
 
             <div>
-              <label htmlFor="cep" className="block text-sm font-medium text-gray-700 mb-1">
+              <label htmlFor="cep" className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
                 CEP
               </label>
               <Input
@@ -386,7 +428,7 @@ export function PatientForm({ patientId, onSuccess, onCancel }: PatientFormProps
             </div>
 
             <div>
-              <label htmlFor="cidade" className="block text-sm font-medium text-gray-700 mb-1">
+              <label htmlFor="cidade" className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
                 Cidade
               </label>
               <Input
@@ -400,7 +442,7 @@ export function PatientForm({ patientId, onSuccess, onCancel }: PatientFormProps
             </div>
 
             <div>
-              <label htmlFor="estado" className="block text-sm font-medium text-gray-700 mb-1">
+              <label htmlFor="estado" className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
                 Estado
               </label>
               <Input
@@ -421,9 +463,9 @@ export function PatientForm({ patientId, onSuccess, onCancel }: PatientFormProps
       <Card>
         <CardHeader title="Informações Médicas" />
         <CardContent>
-          <div className="space-y-4">
+          <div className="space-y-6">
             <div>
-              <label htmlFor="historicoMedico" className="block text-sm font-medium text-gray-700 mb-1">
+              <label htmlFor="historicoMedico" className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
                 Histórico Médico
               </label>
               <textarea
@@ -432,40 +474,28 @@ export function PatientForm({ patientId, onSuccess, onCancel }: PatientFormProps
                 value={formData.historicoMedico}
                 onChange={handleChange}
                 rows={4}
-                className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary-500 focus:border-transparent"
+                className="w-full px-4 py-2 border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-700 text-gray-900 dark:text-gray-100 focus:ring-2 focus:ring-primary-500 focus:border-transparent"
                 placeholder="Descreva o histórico médico relevante..."
               />
             </div>
 
-            <div>
-              <label htmlFor="alergias" className="block text-sm font-medium text-gray-700 mb-1">
-                Alergias
-              </label>
-              <Input
-                id="alergias"
-                name="alergias"
-                type="text"
-                value={formData.alergias}
-                onChange={handleChange}
-                placeholder="Separe por vírgulas: alergia1, alergia2"
-              />
-              <p className="mt-1 text-xs text-gray-500">Separe múltiplas alergias por vírgulas</p>
-            </div>
+            <TagInput
+              label="Alergias"
+              tags={formData.alergias}
+              onChange={handleAllergyChange}
+              suggestions={ALLERGY_SUGGESTIONS}
+              placeholder="Digite uma alergia e pressione Enter"
+              helperText="Adicione alergias conhecidas do paciente"
+            />
 
-            <div>
-              <label htmlFor="medicamentosEmUso" className="block text-sm font-medium text-gray-700 mb-1">
-                Medicamentos em Uso
-              </label>
-              <Input
-                id="medicamentosEmUso"
-                name="medicamentosEmUso"
-                type="text"
-                value={formData.medicamentosEmUso}
-                onChange={handleChange}
-                placeholder="Separe por vírgulas: remédio1, remédio2"
-              />
-              <p className="mt-1 text-xs text-gray-500">Separe múltiplos medicamentos por vírgulas</p>
-            </div>
+            <TagInput
+              label="Medicamentos em Uso"
+              tags={formData.medicamentosEmUso}
+              onChange={handleMedicationChange}
+              suggestions={MEDICATION_SUGGESTIONS}
+              placeholder="Digite um medicamento e pressione Enter"
+              helperText="Adicione os medicamentos que o paciente utiliza regularmente"
+            />
           </div>
         </CardContent>
       </Card>
@@ -476,7 +506,7 @@ export function PatientForm({ patientId, onSuccess, onCancel }: PatientFormProps
         <CardContent>
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
             <div>
-              <label htmlFor="nomeResponsavel" className="block text-sm font-medium text-gray-700 mb-1">
+              <label htmlFor="nomeResponsavel" className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
                 Nome do Responsável
               </label>
               <Input
@@ -490,7 +520,7 @@ export function PatientForm({ patientId, onSuccess, onCancel }: PatientFormProps
             </div>
 
             <div>
-              <label htmlFor="telefoneResponsavel" className="block text-sm font-medium text-gray-700 mb-1">
+              <label htmlFor="telefoneResponsavel" className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
                 Telefone do Responsável
               </label>
               <Input
@@ -516,7 +546,7 @@ export function PatientForm({ patientId, onSuccess, onCancel }: PatientFormProps
             value={formData.observacoes}
             onChange={handleChange}
             rows={4}
-            className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary-500 focus:border-transparent"
+            className="w-full px-4 py-2 border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-700 text-gray-900 dark:text-gray-100 focus:ring-2 focus:ring-primary-500 focus:border-transparent"
             placeholder="Observações gerais sobre o paciente..."
           />
         </CardContent>
@@ -526,9 +556,9 @@ export function PatientForm({ patientId, onSuccess, onCancel }: PatientFormProps
       <div className="flex justify-end gap-3">
         <Button
           type="button"
+          variant="outline"
           onClick={handleCancel}
           disabled={loading}
-          className="bg-gray-200 text-gray-700 hover:bg-gray-300"
         >
           Cancelar
         </Button>

@@ -91,9 +91,6 @@ test.describe('Settings Page', () => {
     test('should change session timeout value', async ({ page }) => {
       const sessionSlider = page.locator('input[type="range"]').first();
 
-      // Get initial value
-      const initialValue = await sessionSlider.inputValue();
-
       // Change value
       await sessionSlider.fill('60');
 
