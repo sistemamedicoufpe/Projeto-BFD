@@ -1,8 +1,10 @@
-import { useState, useEffect } from 'react'
+import { useState, useEffect, useRef } from 'react'
 import { Layout } from '@/components/layout'
 import { Card, CardHeader, CardContent, Button, Input, Toggle, Select } from '@/components/ui'
 import { useAuth } from '@/contexts/AuthContext'
 import { useSettings } from '@/contexts/SettingsContext'
+
+const PROFILE_IMAGE_KEY = 'neurocare_profile_image'
 
 export function SettingsPage() {
   const { user } = useAuth()
@@ -25,6 +27,98 @@ export function SettingsPage() {
     especialidade: '',
     telefone: '',
   })
+
+  const [profileImage, setProfileImage] = useState<string | null>(null)
+  const [imageLoading, setImageLoading] = useState(false)
+  const fileInputRef = useRef<HTMLInputElement>(null)
+
+  // Carregar imagem do perfil do localStorage
+  useEffect(() => {
+    const savedImage = localStorage.getItem(PROFILE_IMAGE_KEY)
+    if (savedImage) {
+      setProfileImage(savedImage)
+    }
+  }, [])
+
+  // Salvar imagem no localStorage
+  const saveProfileImage = (imageData: string | null) => {
+    if (imageData) {
+      localStorage.setItem(PROFILE_IMAGE_KEY, imageData)
+    } else {
+      localStorage.removeItem(PROFILE_IMAGE_KEY)
+    }
+    setProfileImage(imageData)
+  }
+
+  // Handler para upload de imagem
+  const handleImageUpload = (event: React.ChangeEvent<HTMLInputElement>) => {
+    const file = event.target.files?.[0]
+    if (!file) return
+
+    // Validar tipo de arquivo
+    if (!file.type.startsWith('image/')) {
+      alert('Por favor, selecione uma imagem válida.')
+      return
+    }
+
+    // Validar tamanho (máximo 5MB)
+    if (file.size > 5 * 1024 * 1024) {
+      alert('A imagem deve ter no máximo 5MB.')
+      return
+    }
+
+    setImageLoading(true)
+
+    const reader = new FileReader()
+    reader.onload = (e) => {
+      const img = new Image()
+      img.onload = () => {
+        // Redimensionar imagem para no máximo 300x300
+        const canvas = document.createElement('canvas')
+        const maxSize = 300
+        let width = img.width
+        let height = img.height
+
+        if (width > height) {
+          if (width > maxSize) {
+            height = (height * maxSize) / width
+            width = maxSize
+          }
+        } else {
+          if (height > maxSize) {
+            width = (width * maxSize) / height
+            height = maxSize
+          }
+        }
+
+        canvas.width = width
+        canvas.height = height
+
+        const ctx = canvas.getContext('2d')
+        ctx?.drawImage(img, 0, 0, width, height)
+
+        const resizedImage = canvas.toDataURL('image/jpeg', 0.8)
+        saveProfileImage(resizedImage)
+        setImageLoading(false)
+      }
+      img.src = e.target?.result as string
+    }
+    reader.onerror = () => {
+      alert('Erro ao ler a imagem.')
+      setImageLoading(false)
+    }
+    reader.readAsDataURL(file)
+  }
+
+  // Remover imagem de perfil
+  const handleRemoveImage = () => {
+    if (confirm('Tem certeza que deseja remover a foto de perfil?')) {
+      saveProfileImage(null)
+      if (fileInputRef.current) {
+        fileInputRef.current.value = ''
+      }
+    }
+  }
 
   // Carregar dados do perfil do usuário
   useEffect(() => {
@@ -115,6 +209,74 @@ export function SettingsPage() {
             />
             <CardContent>
               <div className="space-y-4">
+                {/* Foto de Perfil */}
+                <div className="flex flex-col items-center pb-4 border-b dark:border-gray-700">
+                  <div className="relative group">
+                    <div className={`w-28 h-28 rounded-full overflow-hidden border-4 border-gray-200 dark:border-gray-600 ${imageLoading ? 'animate-pulse' : ''}`}>
+                      {profileImage ? (
+                        <img
+                          src={profileImage}
+                          alt="Foto de perfil"
+                          className="w-full h-full object-cover"
+                        />
+                      ) : (
+                        <div className="w-full h-full bg-gray-100 dark:bg-gray-700 flex items-center justify-center">
+                          <svg className="w-12 h-12 text-gray-400 dark:text-gray-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z" />
+                          </svg>
+                        </div>
+                      )}
+                    </div>
+
+                    {/* Overlay para alterar foto */}
+                    <button
+                      type="button"
+                      onClick={() => fileInputRef.current?.click()}
+                      className="absolute inset-0 rounded-full bg-black/50 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center cursor-pointer"
+                      disabled={imageLoading}
+                    >
+                      <svg className="w-8 h-8 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M3 9a2 2 0 012-2h.93a2 2 0 001.664-.89l.812-1.22A2 2 0 0110.07 4h3.86a2 2 0 011.664.89l.812 1.22A2 2 0 0018.07 7H19a2 2 0 012 2v9a2 2 0 01-2 2H5a2 2 0 01-2-2V9z" />
+                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 13a3 3 0 11-6 0 3 3 0 016 0z" />
+                      </svg>
+                    </button>
+                  </div>
+
+                  <input
+                    ref={fileInputRef}
+                    type="file"
+                    accept="image/*"
+                    onChange={handleImageUpload}
+                    className="hidden"
+                  />
+
+                  <div className="mt-3 flex gap-2">
+                    <Button
+                      type="button"
+                      variant="outline"
+                      size="sm"
+                      onClick={() => fileInputRef.current?.click()}
+                      disabled={imageLoading}
+                    >
+                      {imageLoading ? 'Carregando...' : profileImage ? 'Alterar foto' : 'Adicionar foto'}
+                    </Button>
+                    {profileImage && (
+                      <Button
+                        type="button"
+                        variant="danger"
+                        size="sm"
+                        onClick={handleRemoveImage}
+                        disabled={imageLoading}
+                      >
+                        Remover
+                      </Button>
+                    )}
+                  </div>
+                  <p className="text-xs text-gray-500 dark:text-gray-400 mt-2">
+                    JPG, PNG ou GIF. Máximo 5MB.
+                  </p>
+                </div>
+
                 <Input
                   label="Nome completo"
                   value={profileData.nome}
