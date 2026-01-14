@@ -5,6 +5,7 @@ import { getPatientsProvider, getEvaluationsProvider, getReportsProvider } from 
 import type { IPatientsProvider, IEvaluationsProvider, IReportsProvider } from '@/services/providers/types'
 import type { Patient, Evaluation } from '@/types'
 import { useAuth } from '@/contexts/AuthContext'
+import { validateForm } from '@/utils/validation'
 
 interface ReportFormData {
   patientId: string
@@ -29,6 +30,7 @@ export function ReportForm() {
   const [loading, setLoading] = useState(true)
   const [saving, setSaving] = useState(false)
   const [error, setError] = useState<string | null>(null)
+  const [fieldErrors, setFieldErrors] = useState<Record<string, string>>({})
 
   const patientsProviderRef = useRef<IPatientsProvider | null>(null)
   const evaluationsProviderRef = useRef<IEvaluationsProvider | null>(null)
@@ -96,13 +98,32 @@ export function ReportForm() {
   const handleChange = (field: keyof ReportFormData, value: string) => {
     setFormData(prev => ({ ...prev, [field]: value }))
     setError(null)
+    if (fieldErrors[field]) {
+      setFieldErrors(prev => ({ ...prev, [field]: '' }))
+    }
+  }
+
+  const validateFormFields = (): boolean => {
+    const { isValid, errors } = validateForm({
+      patientId: {
+        value: formData.patientId,
+        rules: [{ type: 'required', message: 'Selecione um paciente' }],
+      },
+      tipo: {
+        value: formData.tipo,
+        rules: [{ type: 'required', message: 'Selecione o tipo de relatório' }],
+      },
+    })
+
+    setFieldErrors(errors)
+    return isValid
   }
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
 
-    if (!formData.patientId) {
-      setError('Selecione um paciente')
+    if (!validateFormFields()) {
+      setError('Por favor, corrija os erros no formulário')
       return
     }
 
@@ -175,7 +196,7 @@ export function ReportForm() {
   return (
     <form onSubmit={handleSubmit} className="space-y-6">
       {error && (
-        <div className="bg-red-50 border border-red-200 text-red-700 px-4 py-3 rounded-lg">
+        <div className="bg-red-50 dark:bg-red-900/30 border border-red-200 dark:border-red-800 text-red-700 dark:text-red-300 px-4 py-3 rounded-lg">
           {error}
         </div>
       )}
@@ -185,19 +206,24 @@ export function ReportForm() {
         <CardHeader title="Dados do Relatório" subtitle="Selecione o paciente e avaliação" />
         <CardContent>
           <div className="space-y-4">
-            <Select
-              label="Paciente *"
-              value={formData.patientId}
-              onChange={(value) => handleChange('patientId', value)}
-              options={[
-                { value: '', label: 'Selecione um paciente...' },
-                ...patients.map(p => ({ value: p.id, label: `${p.nome} - CPF: ${p.cpf || 'N/A'}` }))
-              ]}
-            />
+            <div>
+              <Select
+                label="Paciente *"
+                value={formData.patientId}
+                onChange={(value) => handleChange('patientId', value)}
+                options={[
+                  { value: '', label: 'Selecione um paciente...' },
+                  ...patients.map(p => ({ value: p.id, label: `${p.nome} - CPF: ${p.cpf || 'N/A'}` }))
+                ]}
+              />
+              {fieldErrors.patientId && (
+                <p className="mt-1 text-sm text-red-600 dark:text-red-400">{fieldErrors.patientId}</p>
+              )}
+            </div>
 
             {selectedPatient && (
-              <div className="bg-blue-50 p-4 rounded-lg">
-                <p className="text-sm text-blue-900">
+              <div className="bg-blue-50 dark:bg-blue-900/30 p-4 rounded-lg">
+                <p className="text-sm text-blue-900 dark:text-blue-200">
                   <strong>Paciente:</strong> {selectedPatient.nome}<br />
                   <strong>Idade:</strong> {selectedPatient.idade} anos<br />
                   <strong>Avaliações disponíveis:</strong> {filteredEvaluations.length}
@@ -221,8 +247,8 @@ export function ReportForm() {
             )}
 
             {selectedEvaluation && (
-              <div className="bg-green-50 p-4 rounded-lg">
-                <p className="text-sm text-green-900">
+              <div className="bg-green-50 dark:bg-green-900/30 p-4 rounded-lg">
+                <p className="text-sm text-green-900 dark:text-green-200">
                   <strong>Data:</strong> {new Date(selectedEvaluation.dataAvaliacao).toLocaleDateString('pt-BR')}<br />
                   <strong>Queixa:</strong> {selectedEvaluation.queixaPrincipal}<br />
                   <strong>Status:</strong> {selectedEvaluation.status}
@@ -273,14 +299,14 @@ export function ReportForm() {
             />
 
             <div>
-              <label className="block text-sm font-medium text-gray-700 mb-1">
+              <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
                 Prognóstico
               </label>
               <textarea
                 value={formData.prognostico}
                 onChange={(e) => handleChange('prognostico', e.target.value)}
                 rows={3}
-                className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary-500 focus:border-transparent"
+                className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-700 text-gray-900 dark:text-gray-100 focus:ring-2 focus:ring-primary-500 focus:border-transparent"
                 placeholder="Descreva o prognóstico do paciente..."
               />
             </div>
@@ -294,40 +320,40 @@ export function ReportForm() {
         <CardContent>
           <div className="space-y-4">
             <div>
-              <label className="block text-sm font-medium text-gray-700 mb-1">
+              <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
                 Tratamento Medicamentoso
               </label>
               <textarea
                 value={formData.tratamentoMedicamentoso}
                 onChange={(e) => handleChange('tratamentoMedicamentoso', e.target.value)}
                 rows={3}
-                className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary-500 focus:border-transparent"
+                className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-700 text-gray-900 dark:text-gray-100 focus:ring-2 focus:ring-primary-500 focus:border-transparent"
                 placeholder="Medicamentos prescritos e posologia..."
               />
             </div>
 
             <div>
-              <label className="block text-sm font-medium text-gray-700 mb-1">
+              <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
                 Tratamento Não-Medicamentoso
               </label>
               <textarea
                 value={formData.tratamentoNaoMedicamentoso}
                 onChange={(e) => handleChange('tratamentoNaoMedicamentoso', e.target.value)}
                 rows={3}
-                className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary-500 focus:border-transparent"
+                className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-700 text-gray-900 dark:text-gray-100 focus:ring-2 focus:ring-primary-500 focus:border-transparent"
                 placeholder="Fisioterapia, terapia ocupacional, estimulação cognitiva..."
               />
             </div>
 
             <div>
-              <label className="block text-sm font-medium text-gray-700 mb-1">
+              <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
                 Acompanhamento
               </label>
               <textarea
                 value={formData.acompanhamento}
                 onChange={(e) => handleChange('acompanhamento', e.target.value)}
                 rows={2}
-                className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary-500 focus:border-transparent"
+                className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-700 text-gray-900 dark:text-gray-100 focus:ring-2 focus:ring-primary-500 focus:border-transparent"
                 placeholder="Frequência de retornos, exames de acompanhamento..."
               />
             </div>
@@ -340,14 +366,14 @@ export function ReportForm() {
         <CardHeader title="Conclusão" subtitle="Considerações finais" />
         <CardContent>
           <div>
-            <label className="block text-sm font-medium text-gray-700 mb-1">
+            <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
               Conclusão do Relatório
             </label>
             <textarea
               value={formData.conclusao}
               onChange={(e) => handleChange('conclusao', e.target.value)}
               rows={4}
-              className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary-500 focus:border-transparent"
+              className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-700 text-gray-900 dark:text-gray-100 focus:ring-2 focus:ring-primary-500 focus:border-transparent"
               placeholder="Síntese das conclusões e recomendações..."
             />
           </div>

@@ -6,6 +6,7 @@ import { MMSETest } from '@/components/evaluations';
 import { getEvaluationsProvider, getPatientsProvider } from '@/services/providers/factory/provider-factory';
 import type { IEvaluationsProvider, IPatientsProvider } from '@/services/providers/types';
 import type { Patient } from '@neurocare/shared-types';
+import { validateForm } from '@/utils/validation';
 
 type Step = 'basic-info' | 'mmse-test' | 'review';
 
@@ -38,6 +39,7 @@ export function EvaluationCreatePage() {
   const [loadingPatients, setLoadingPatients] = useState(true);
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const [fieldErrors, setFieldErrors] = useState<Record<string, string>>({});
 
   const patientsProviderRef = useRef<IPatientsProvider | null>(null);
   const evaluationsProviderRef = useRef<IEvaluationsProvider | null>(null);
@@ -81,15 +83,41 @@ export function EvaluationCreatePage() {
   const handleBasicInfoChange = (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement | HTMLSelectElement>) => {
     const { name, value } = e.target;
     setBasicInfo(prev => ({ ...prev, [name]: value }));
+    // Limpar erro do campo quando o usuário digita
+    if (fieldErrors[name]) {
+      setFieldErrors(prev => ({ ...prev, [name]: '' }));
+    }
+  };
+
+  const validateBasicInfo = (): boolean => {
+    const { isValid, errors } = validateForm({
+      patientId: {
+        value: basicInfo.patientId,
+        rules: [{ type: 'required', message: 'Selecione um paciente' }],
+      },
+      dataAvaliacao: {
+        value: basicInfo.dataAvaliacao,
+        rules: [
+          { type: 'required', message: 'Data da avaliação é obrigatória' },
+          { type: 'date', message: 'Data inválida' },
+        ],
+      },
+      queixaPrincipal: {
+        value: basicInfo.queixaPrincipal,
+        rules: [
+          { type: 'required', message: 'Queixa principal é obrigatória' },
+          { type: 'minLength', length: 10, message: 'Queixa principal deve ter pelo menos 10 caracteres' },
+        ],
+      },
+    });
+
+    setFieldErrors(errors);
+    return isValid;
   };
 
   const handleBasicInfoNext = () => {
-    if (!basicInfo.patientId) {
-      setError('Selecione um paciente');
-      return;
-    }
-    if (!basicInfo.queixaPrincipal.trim()) {
-      setError('Informe a queixa principal');
+    if (!validateBasicInfo()) {
+      setError('Por favor, corrija os erros no formulário');
       return;
     }
     setError(null);
@@ -184,7 +212,7 @@ export function EvaluationCreatePage() {
         </div>
 
         {error && (
-          <div className="bg-red-50 border border-red-200 text-red-700 px-4 py-3 rounded-lg">
+          <div className="bg-red-50 dark:bg-red-900/30 border border-red-200 dark:border-red-800 text-red-700 dark:text-red-300 px-4 py-3 rounded-lg">
             {error}
           </div>
         )}
@@ -197,11 +225,11 @@ export function EvaluationCreatePage() {
               <CardContent>
                 <div className="space-y-4">
                   <div>
-                    <label htmlFor="patientId" className="block text-sm font-medium text-gray-700 mb-1">
+                    <label htmlFor="patientId" className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
                       Paciente *
                     </label>
                     {loadingPatients ? (
-                      <div className="text-sm text-gray-600">Carregando pacientes...</div>
+                      <div className="text-sm text-gray-600 dark:text-gray-400">Carregando pacientes...</div>
                     ) : (
                       <select
                         id="patientId"
@@ -209,7 +237,9 @@ export function EvaluationCreatePage() {
                         value={basicInfo.patientId}
                         onChange={handleBasicInfoChange}
                         required
-                        className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary-500 focus:border-transparent"
+                        className={`w-full px-4 py-2 border rounded-lg bg-white dark:bg-gray-700 text-gray-900 dark:text-gray-100 focus:ring-2 focus:ring-primary-500 focus:border-transparent ${
+                          fieldErrors.patientId ? 'border-red-500' : 'border-gray-300 dark:border-gray-600'
+                        }`}
                       >
                         <option value="">Selecione um paciente...</option>
                         {patients.map(patient => (
@@ -219,11 +249,14 @@ export function EvaluationCreatePage() {
                         ))}
                       </select>
                     )}
+                    {fieldErrors.patientId && (
+                      <p className="mt-1 text-sm text-red-600 dark:text-red-400">{fieldErrors.patientId}</p>
+                    )}
                   </div>
 
                   {selectedPatient && (
-                    <div className="bg-blue-50 p-4 rounded-lg">
-                      <p className="text-sm text-blue-900">
+                    <div className="bg-blue-50 dark:bg-blue-900/30 p-4 rounded-lg">
+                      <p className="text-sm text-blue-900 dark:text-blue-200">
                         <strong>Paciente selecionado:</strong> {selectedPatient.nome}<br />
                         <strong>Idade:</strong> {selectedPatient.idade} anos<br />
                         <strong>Data de nascimento:</strong> {new Date(selectedPatient.dataNascimento).toLocaleDateString('pt-BR')}
@@ -232,7 +265,7 @@ export function EvaluationCreatePage() {
                   )}
 
                   <div>
-                    <label htmlFor="dataAvaliacao" className="block text-sm font-medium text-gray-700 mb-1">
+                    <label htmlFor="dataAvaliacao" className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
                       Data da Avaliação *
                     </label>
                     <Input
@@ -241,12 +274,13 @@ export function EvaluationCreatePage() {
                       type="date"
                       value={basicInfo.dataAvaliacao}
                       onChange={handleBasicInfoChange}
+                      error={fieldErrors.dataAvaliacao}
                       required
                     />
                   </div>
 
                   <div>
-                    <label htmlFor="queixaPrincipal" className="block text-sm font-medium text-gray-700 mb-1">
+                    <label htmlFor="queixaPrincipal" className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
                       Queixa Principal *
                     </label>
                     <textarea
@@ -256,13 +290,18 @@ export function EvaluationCreatePage() {
                       onChange={handleBasicInfoChange}
                       required
                       rows={3}
-                      className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary-500 focus:border-transparent"
+                      className={`w-full px-4 py-2 border rounded-lg bg-white dark:bg-gray-700 text-gray-900 dark:text-gray-100 focus:ring-2 focus:ring-primary-500 focus:border-transparent ${
+                        fieldErrors.queixaPrincipal ? 'border-red-500' : 'border-gray-300 dark:border-gray-600'
+                      }`}
                       placeholder="Descreva a queixa principal do paciente..."
                     />
+                    {fieldErrors.queixaPrincipal && (
+                      <p className="mt-1 text-sm text-red-600 dark:text-red-400">{fieldErrors.queixaPrincipal}</p>
+                    )}
                   </div>
 
                   <div>
-                    <label htmlFor="historicoDoencaAtual" className="block text-sm font-medium text-gray-700 mb-1">
+                    <label htmlFor="historicoDoencaAtual" className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
                       História da Doença Atual
                     </label>
                     <textarea
@@ -271,14 +310,14 @@ export function EvaluationCreatePage() {
                       value={basicInfo.historicoDoencaAtual}
                       onChange={handleBasicInfoChange}
                       rows={4}
-                      className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary-500 focus:border-transparent"
+                      className="w-full px-4 py-2 border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-700 text-gray-900 dark:text-gray-100 focus:ring-2 focus:ring-primary-500 focus:border-transparent"
                       placeholder="Descreva o histórico da doença atual..."
                     />
                   </div>
 
                   <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                     <div>
-                      <label htmlFor="antecedentesPessoais" className="block text-sm font-medium text-gray-700 mb-1">
+                      <label htmlFor="antecedentesPessoais" className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
                         Antecedentes Pessoais
                       </label>
                       <textarea
@@ -287,13 +326,13 @@ export function EvaluationCreatePage() {
                         value={basicInfo.antecedentesPessoais}
                         onChange={handleBasicInfoChange}
                         rows={3}
-                        className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary-500 focus:border-transparent"
+                        className="w-full px-4 py-2 border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-700 text-gray-900 dark:text-gray-100 focus:ring-2 focus:ring-primary-500 focus:border-transparent"
                         placeholder="Histórico médico pessoal..."
                       />
                     </div>
 
                     <div>
-                      <label htmlFor="antecedentesFamiliares" className="block text-sm font-medium text-gray-700 mb-1">
+                      <label htmlFor="antecedentesFamiliares" className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
                         Antecedentes Familiares
                       </label>
                       <textarea
@@ -302,14 +341,14 @@ export function EvaluationCreatePage() {
                         value={basicInfo.antecedentesFamiliares}
                         onChange={handleBasicInfoChange}
                         rows={3}
-                        className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary-500 focus:border-transparent"
+                        className="w-full px-4 py-2 border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-700 text-gray-900 dark:text-gray-100 focus:ring-2 focus:ring-primary-500 focus:border-transparent"
                         placeholder="Histórico médico familiar..."
                       />
                     </div>
                   </div>
 
                   <div>
-                    <label htmlFor="medicamentosEmUso" className="block text-sm font-medium text-gray-700 mb-1">
+                    <label htmlFor="medicamentosEmUso" className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
                       Medicamentos em Uso
                     </label>
                     <Input
@@ -324,7 +363,7 @@ export function EvaluationCreatePage() {
 
                   <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                     <div>
-                      <label htmlFor="hipoteseDiagnostica" className="block text-sm font-medium text-gray-700 mb-1">
+                      <label htmlFor="hipoteseDiagnostica" className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
                         Hipótese Diagnóstica
                       </label>
                       <Input
@@ -338,7 +377,7 @@ export function EvaluationCreatePage() {
                     </div>
 
                     <div>
-                      <label htmlFor="cid10" className="block text-sm font-medium text-gray-700 mb-1">
+                      <label htmlFor="cid10" className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
                         CID-10
                       </label>
                       <Input

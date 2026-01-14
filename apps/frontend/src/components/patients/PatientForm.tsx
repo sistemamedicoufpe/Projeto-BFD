@@ -3,6 +3,7 @@ import { useNavigate } from 'react-router-dom';
 import { Button, Input, Card, CardHeader, CardContent, TagInput } from '@/components/ui';
 import { patientsApi } from '../../services/api';
 import type { Gender } from '@neurocare/shared-types';
+import { validateForm, formatCPF, formatPhone, formatCEP } from '@/utils/validation';
 
 interface PatientFormProps {
   patientId?: string;
@@ -74,6 +75,7 @@ export function PatientForm({ patientId, onSuccess, onCancel }: PatientFormProps
   const [loading, setLoading] = useState(false);
   const [loadingData, setLoadingData] = useState(!!patientId);
   const [error, setError] = useState<string | null>(null);
+  const [fieldErrors, setFieldErrors] = useState<Record<string, string>>({});
   const [formData, setFormData] = useState<FormData>({
     nome: '',
     cpf: '',
@@ -139,7 +141,23 @@ export function PatientForm({ patientId, onSuccess, onCancel }: PatientFormProps
 
   const handleChange = (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement | HTMLSelectElement>) => {
     const { name, value } = e.target;
-    setFormData(prev => ({ ...prev, [name]: value }));
+
+    // Aplicar formatação automática para campos específicos
+    let formattedValue = value;
+    if (name === 'cpf') {
+      formattedValue = formatCPF(value);
+    } else if (name === 'telefone' || name === 'celular' || name === 'telefoneResponsavel') {
+      formattedValue = formatPhone(value);
+    } else if (name === 'cep') {
+      formattedValue = formatCEP(value);
+    }
+
+    setFormData(prev => ({ ...prev, [name]: formattedValue }));
+
+    // Limpar erro do campo quando o usuário digita
+    if (fieldErrors[name]) {
+      setFieldErrors(prev => ({ ...prev, [name]: '' }));
+    }
   };
 
   const handleAllergyChange = (alergias: string[]) => {
@@ -150,35 +168,64 @@ export function PatientForm({ patientId, onSuccess, onCancel }: PatientFormProps
     setFormData(prev => ({ ...prev, medicamentosEmUso }));
   };
 
-  const validateForm = (): string | null => {
-    if (!formData.nome.trim()) {
-      return 'Nome é obrigatório';
-    }
-    if (!formData.cpf.trim()) {
-      return 'CPF é obrigatório';
-    }
-    if (!formData.dataNascimento) {
-      return 'Data de nascimento é obrigatória';
-    }
-    if (!formData.genero) {
-      return 'Gênero é obrigatório';
-    }
+  const validateFormFields = (): boolean => {
+    const { isValid, errors } = validateForm({
+      nome: {
+        value: formData.nome,
+        rules: [
+          { type: 'required', message: 'Nome é obrigatório' },
+          { type: 'minLength', length: 3, message: 'Nome deve ter pelo menos 3 caracteres' },
+        ],
+      },
+      cpf: {
+        value: formData.cpf,
+        rules: [
+          { type: 'required', message: 'CPF é obrigatório' },
+          { type: 'cpf', message: 'CPF inválido' },
+        ],
+      },
+      dataNascimento: {
+        value: formData.dataNascimento,
+        rules: [
+          { type: 'required', message: 'Data de nascimento é obrigatória' },
+          { type: 'date', message: 'Data de nascimento inválida' },
+        ],
+      },
+      genero: {
+        value: formData.genero,
+        rules: [{ type: 'required', message: 'Gênero é obrigatório' }],
+      },
+      email: {
+        value: formData.email,
+        rules: formData.email ? [{ type: 'email', message: 'Email inválido' }] : [],
+      },
+      telefone: {
+        value: formData.telefone,
+        rules: formData.telefone ? [{ type: 'phone', message: 'Telefone inválido' }] : [],
+      },
+      celular: {
+        value: formData.celular,
+        rules: formData.celular ? [{ type: 'phone', message: 'Celular inválido' }] : [],
+      },
+      cep: {
+        value: formData.cep,
+        rules: formData.cep ? [{ type: 'cep', message: 'CEP inválido' }] : [],
+      },
+      telefoneResponsavel: {
+        value: formData.telefoneResponsavel,
+        rules: formData.telefoneResponsavel ? [{ type: 'phone', message: 'Telefone do responsável inválido' }] : [],
+      },
+    });
 
-    // Validate CPF format (basic check)
-    const cpfClean = formData.cpf.replace(/\D/g, '');
-    if (cpfClean.length !== 11) {
-      return 'CPF deve ter 11 dígitos';
-    }
-
-    return null;
+    setFieldErrors(errors);
+    return isValid;
   };
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
 
-    const validationError = validateForm();
-    if (validationError) {
-      setError(validationError);
+    if (!validateFormFields()) {
+      setError('Por favor, corrija os erros no formulário');
       return;
     }
 
@@ -262,44 +309,38 @@ export function PatientForm({ patientId, onSuccess, onCancel }: PatientFormProps
         <CardContent>
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
             <div>
-              <label htmlFor="nome" className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
-                Nome Completo *
-              </label>
               <Input
                 id="nome"
                 name="nome"
                 type="text"
+                label="Nome Completo *"
                 value={formData.nome}
                 onChange={handleChange}
-                required
+                error={fieldErrors.nome}
                 placeholder="Nome completo do paciente"
               />
             </div>
 
             <div>
-              <label htmlFor="cpf" className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
-                CPF *
-              </label>
               <Input
                 id="cpf"
                 name="cpf"
                 type="text"
+                label="CPF *"
                 value={formData.cpf}
                 onChange={handleChange}
-                required
+                error={fieldErrors.cpf}
                 placeholder="000.000.000-00"
                 maxLength={14}
               />
             </div>
 
             <div>
-              <label htmlFor="rg" className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
-                RG
-              </label>
               <Input
                 id="rg"
                 name="rg"
                 type="text"
+                label="RG"
                 value={formData.rg}
                 onChange={handleChange}
                 placeholder="00.000.000-0"
@@ -307,16 +348,14 @@ export function PatientForm({ patientId, onSuccess, onCancel }: PatientFormProps
             </div>
 
             <div>
-              <label htmlFor="dataNascimento" className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
-                Data de Nascimento *
-              </label>
               <Input
                 id="dataNascimento"
                 name="dataNascimento"
                 type="date"
+                label="Data de Nascimento *"
                 value={formData.dataNascimento}
                 onChange={handleChange}
-                required
+                error={fieldErrors.dataNascimento}
               />
             </div>
 
@@ -329,8 +368,9 @@ export function PatientForm({ patientId, onSuccess, onCancel }: PatientFormProps
                 name="genero"
                 value={formData.genero}
                 onChange={handleChange}
-                required
-                className="w-full px-4 py-2 border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-700 text-gray-900 dark:text-gray-100 focus:ring-2 focus:ring-primary-500 focus:border-transparent"
+                className={`w-full px-4 py-2 border rounded-lg bg-white dark:bg-gray-700 text-gray-900 dark:text-gray-100 focus:ring-2 focus:ring-primary-500 focus:border-transparent ${
+                  fieldErrors.genero ? 'border-red-500' : 'border-gray-300 dark:border-gray-600'
+                }`}
               >
                 <option value="">Selecione...</option>
                 <option value="MALE">Masculino</option>
@@ -338,6 +378,9 @@ export function PatientForm({ patientId, onSuccess, onCancel }: PatientFormProps
                 <option value="OTHER">Outro</option>
                 <option value="PREFER_NOT_TO_SAY">Prefiro não dizer</option>
               </select>
+              {fieldErrors.genero && (
+                <p className="mt-1 text-sm text-red-600 dark:text-red-400">{fieldErrors.genero}</p>
+              )}
             </div>
           </div>
         </CardContent>
@@ -349,43 +392,40 @@ export function PatientForm({ patientId, onSuccess, onCancel }: PatientFormProps
         <CardContent>
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
             <div>
-              <label htmlFor="email" className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
-                Email
-              </label>
               <Input
                 id="email"
                 name="email"
                 type="email"
+                label="Email"
                 value={formData.email}
                 onChange={handleChange}
+                error={fieldErrors.email}
                 placeholder="email@exemplo.com"
               />
             </div>
 
             <div>
-              <label htmlFor="telefone" className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
-                Telefone
-              </label>
               <Input
                 id="telefone"
                 name="telefone"
                 type="tel"
+                label="Telefone"
                 value={formData.telefone}
                 onChange={handleChange}
+                error={fieldErrors.telefone}
                 placeholder="(00) 0000-0000"
               />
             </div>
 
             <div>
-              <label htmlFor="celular" className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
-                Celular
-              </label>
               <Input
                 id="celular"
                 name="celular"
                 type="tel"
+                label="Celular"
                 value={formData.celular}
                 onChange={handleChange}
+                error={fieldErrors.celular}
                 placeholder="(00) 00000-0000"
               />
             </div>
