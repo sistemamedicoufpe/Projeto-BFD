@@ -326,6 +326,283 @@ syncService.retryFailedItems()        // Retentar falhas
 
 ---
 
+## 📐 Diagramas de Sequência
+
+### 1. Fluxo de Autenticação (Provider Factory)
+
+```mermaid
+sequenceDiagram
+    participant U as Usuário
+    participant App as React App
+    participant AC as AuthContext
+    participant PF as Provider Factory
+    participant FP as Firebase Provider
+    participant IP as IndexedDB Provider
+    participant FB as Firebase Auth
+    participant IDB as IndexedDB
+
+    U->>App: Acessa /login
+    App->>AC: Verifica autenticação
+    AC->>PF: getAuthProvider()
+
+    alt VITE_DATABASE_PROVIDER=firebase
+        PF->>FP: new FirebaseAuthProvider()
+        FP-->>AC: provider instance
+        U->>App: Submete credenciais
+        AC->>FP: login(credentials)
+        FP->>FB: signInWithEmailAndPassword()
+        FB-->>FP: Firebase User
+        FP->>FB: getDoc(users/{uid})
+        FB-->>FP: User data
+        FP-->>AC: { user, tokens }
+        AC->>App: Atualiza estado
+        App->>U: Redireciona para Dashboard
+    else VITE_DATABASE_PROVIDER=indexeddb
+        PF->>IP: new IndexedDBAuthProvider()
+        IP-->>AC: provider instance
+        U->>App: Submete credenciais
+        AC->>IP: login(credentials)
+        IP->>IDB: Busca usuário
+        IDB-->>IP: User data
+        IP-->>AC: { user, tokens }
+        AC->>App: Atualiza estado
+        App->>U: Redireciona para Dashboard
+    end
+```
+
+### 2. Fluxo de Sincronização Offline-First
+
+```mermaid
+sequenceDiagram
+    participant U as Usuário
+    participant App as React App
+    participant SS as Sync Service
+    participant IDB as IndexedDB
+    participant SW as Service Worker
+    participant API as Backend API
+
+    Note over U,API: Cenário: Usuário cria paciente offline
+
+    U->>App: Cria novo paciente
+    App->>IDB: Salva localmente
+    IDB-->>App: OK (id gerado)
+    App->>SS: queueForSync(patient)
+    SS->>IDB: Adiciona à syncQueue
+    App->>U: "Paciente salvo (pendente sync)"
+
+    Note over U,API: Reconexão à internet
+
+    SW->>SW: Detecta online
+    SW->>App: postMessage(SYNC_REQUEST)
+    App->>SS: sync()
+    SS->>IDB: getAll(syncQueue)
+    IDB-->>SS: [pendingItems]
+
+    loop Para cada item pendente
+        SS->>API: POST/PUT/DELETE
+        alt Sucesso
+            API-->>SS: OK
+            SS->>IDB: Remove da syncQueue
+            SS->>IDB: Marca _synced=true
+        else Erro
+            API-->>SS: Error
+            SS->>IDB: Incrementa attempts
+            Note over SS: Retry com backoff
+        end
+    end
+
+    SS->>App: Atualiza syncStatus
+    App->>U: "Sincronização completa"
+```
+
+### 3. Fluxo de Avaliação com Testes Cognitivos
+
+```mermaid
+sequenceDiagram
+    participant M as Médico
+    participant App as React App
+    participant EP as Evaluations Provider
+    participant PP as Patients Provider
+    participant ES as Encryption Service
+    participant DB as Database (Firebase/IndexedDB)
+
+    M->>App: Acessa /avaliacoes/nova
+    App->>PP: getAll()
+    PP->>DB: Busca pacientes
+    DB-->>PP: Lista de pacientes
+    PP-->>App: patients[]
+    App->>M: Exibe formulário
+
+    Note over M,App: Etapa 1: Dados Básicos
+
+    M->>App: Seleciona paciente
+    M->>App: Preenche queixa principal
+    M->>App: Preenche histórico
+    M->>App: Clica "Próximo"
+
+    Note over M,App: Etapa 2: MMSE Test
+
+    loop 19 questões MMSE
+        App->>M: Exibe questão
+        M->>App: Responde questão
+        App->>App: Calcula pontuação parcial
+    end
+
+    App->>App: Calcula score total (0-30)
+    App->>App: Determina interpretação
+    M->>App: Clica "Próximo"
+
+    Note over M,App: Etapa 3: Revisão e Salvamento
+
+    App->>M: Exibe resumo completo
+    M->>App: Clica "Salvar Avaliação"
+
+    App->>ES: encrypt(mmseResult)
+    ES-->>App: encryptedData
+    App->>EP: create(evaluation)
+    EP->>DB: Salva avaliação
+    DB-->>EP: OK
+    EP-->>App: evaluation criada
+
+    App->>M: "Avaliação salva com sucesso"
+    App->>M: Redireciona para lista
+```
+
+### 4. Fluxo de Geração de PDF
+
+```mermaid
+sequenceDiagram
+    participant M as Médico
+    participant App as React App
+    participant PG as PDF Generator
+    participant ES as Encryption Service
+    participant EP as Evaluations Provider
+    participant PP as Patients Provider
+
+    M->>App: Clica "Gerar PDF"
+    App->>PP: getById(patientId)
+    PP-->>App: patient
+    App->>EP: getById(evaluationId)
+    EP-->>App: evaluation (encrypted)
+
+    App->>ES: decrypt(mmseResult)
+    ES-->>App: decryptedMMSE
+    App->>ES: decrypt(mocaResult)
+    ES-->>App: decryptedMoCA
+
+    App->>PG: generateReport(patient, evaluation)
+
+    Note over PG: Construção do PDF
+    PG->>PG: Adiciona header profissional
+    PG->>PG: Adiciona dados do paciente
+    PG->>PG: Adiciona dados da avaliação
+    PG->>PG: Adiciona gráficos MMSE
+    PG->>PG: Adiciona gráficos MoCA
+    PG->>PG: Adiciona imagem do relógio
+    PG->>PG: Adiciona footer com paginação
+
+    PG-->>App: PDF Blob
+    App->>M: Download automático do PDF
+```
+
+### 5. Fluxo do Provider Factory
+
+```mermaid
+sequenceDiagram
+    participant App as React App
+    participant PF as Provider Factory
+    participant ENV as Environment
+    participant FBP as Firebase Providers
+    participant IDBP as IndexedDB Providers
+    participant PSQLP as PostgreSQL Providers
+
+    App->>PF: initializeProviders()
+    PF->>ENV: VITE_DATABASE_PROVIDER
+    ENV-->>PF: "firebase" | "indexeddb" | "postgresql"
+
+    alt provider = "firebase"
+        PF->>FBP: import firebase providers
+        FBP->>FBP: initializeFirebase()
+        FBP-->>PF: Firebase instances
+        Note over PF: Habilita offline persistence
+    else provider = "indexeddb"
+        PF->>IDBP: import indexeddb providers
+        IDBP->>IDBP: Abre Dexie database
+        IDBP-->>PF: IndexedDB instances
+    else provider = "postgresql"
+        PF->>PSQLP: import postgresql providers
+        PSQLP->>PSQLP: Configura axios client
+        PSQLP-->>PF: API client instances
+    end
+
+    PF-->>App: Providers inicializados
+
+    Note over App,PF: Uso dos providers
+
+    App->>PF: getPatientsProvider()
+    PF-->>App: IPatientsProvider
+    App->>PF: getAuthProvider()
+    PF-->>App: IAuthProvider
+```
+
+### 6. Fluxo do Service Worker (PWA)
+
+```mermaid
+sequenceDiagram
+    participant B as Browser
+    participant SW as Service Worker
+    participant Cache as Cache Storage
+    participant Net as Network
+    participant App as React App
+
+    Note over B,App: Instalação do Service Worker
+
+    B->>SW: register('/service-worker.js')
+    SW->>SW: install event
+    SW->>Cache: cache.addAll(PRECACHE_ASSETS)
+    Cache-->>SW: Cached
+    SW->>SW: skipWaiting()
+    SW->>SW: activate event
+    SW->>Cache: Limpa caches antigos
+    SW->>SW: clients.claim()
+
+    Note over B,App: Requisição de Navegação (Network First)
+
+    App->>SW: fetch('/pacientes')
+    SW->>Net: fetch(request)
+    alt Online
+        Net-->>SW: Response
+        SW->>Cache: cache.put(request, response)
+        SW-->>App: Response
+    else Offline
+        Net--xSW: Network Error
+        SW->>Cache: cache.match(request)
+        Cache-->>SW: Cached Response
+        SW-->>App: Cached Response
+    end
+
+    Note over B,App: Requisição de API (Network First + Cache Fallback)
+
+    App->>SW: fetch('/api/patients')
+    SW->>Net: fetch(request)
+    alt Online
+        Net-->>SW: Response
+        SW->>Cache: cache.put(request, response)
+        SW-->>App: Response
+    else Offline
+        Net--xSW: Network Error
+        SW->>Cache: cache.match(request)
+        alt Cache Hit
+            Cache-->>SW: Cached Response
+            SW-->>App: Cached Response
+        else Cache Miss
+            SW-->>App: { error: 'offline', status: 503 }
+        end
+    end
+```
+
+---
+
 ## 📊 Estatísticas do Projeto
 
 ### Linhas de Código

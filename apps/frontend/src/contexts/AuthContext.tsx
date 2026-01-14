@@ -1,6 +1,7 @@
-import React, { createContext, useContext, useState, useEffect, ReactNode } from 'react';
-import { authApi } from '../services/api';
-import type { User, LoginDto, RegisterDto } from '@neurocare/shared-types';
+import { createContext, useContext, useState, useEffect, useRef, useCallback, ReactNode } from 'react';
+import { getAuthProvider, getCurrentProviderType } from '../services/providers/factory/provider-factory';
+import type { IAuthProvider } from '../services/providers/types';
+import type { User, LoginCredentials, RegisterData } from '@/types';
 
 /**
  * Tipo do contexto de autenticação
@@ -9,14 +10,15 @@ interface AuthContextType {
   user: User | null;
   isLoading: boolean;
   isAuthenticated: boolean;
-  login: (credentials: LoginDto) => Promise<void>;
-  register: (data: RegisterDto) => Promise<void>;
+  providerType: string;
+  login: (credentials: LoginCredentials) => Promise<void>;
+  register: (data: RegisterData) => Promise<void>;
   logout: () => Promise<void>;
   refreshUser: () => Promise<void>;
 }
 
 /**
- * Contexto de autenticação - integrado com backend
+ * Contexto de autenticação - usa Provider Factory
  */
 const AuthContext = createContext<AuthContextType | undefined>(undefined);
 
@@ -33,44 +35,61 @@ interface AuthProviderProps {
 export function AuthProvider({ children }: AuthProviderProps) {
   const [user, setUser] = useState<User | null>(null);
   const [isLoading, setIsLoading] = useState(true);
+  const [isAuthenticated, setIsAuthenticated] = useState(false);
+  const authProviderRef = useRef<IAuthProvider | null>(null);
+  const unsubscribeRef = useRef<(() => void) | null>(null);
+  const providerType = getCurrentProviderType();
 
   /**
-   * Verifica se está autenticado
+   * Inicializa o provider de autenticação
    */
-  const isAuthenticated = authApi.isAuthenticated();
+  const initAuthProvider = useCallback(async () => {
+    try {
+      const provider = await getAuthProvider();
+      authProviderRef.current = provider;
 
-  /**
-   * Carrega perfil do usuário ao montar
-   */
-  useEffect(() => {
-    const loadUser = async () => {
-      if (authApi.isAuthenticated()) {
-        try {
-          const userData = await authApi.getProfile();
-          setUser(userData);
-        } catch (error) {
-          console.error('Erro ao carregar perfil:', error);
-          // Se falhar, limpa tokens
-          await authApi.logout();
-          setUser(null);
-        }
+      // Verifica autenticação inicial
+      const currentUser = provider.getCurrentUser();
+      setUser(currentUser);
+      setIsAuthenticated(provider.isAuthenticated());
+
+      // Se o provider suportar onAuthStateChange (Firebase), usa-o
+      if (provider.onAuthStateChange) {
+        unsubscribeRef.current = provider.onAuthStateChange((authUser) => {
+          setUser(authUser);
+          setIsAuthenticated(!!authUser);
+        });
       }
+    } catch (error) {
+      console.error('Erro ao inicializar provider de autenticação:', error);
+    } finally {
       setIsLoading(false);
-    };
-
-    loadUser();
+    }
   }, []);
+
+  useEffect(() => {
+    initAuthProvider();
+
+    return () => {
+      if (unsubscribeRef.current) {
+        unsubscribeRef.current();
+      }
+    };
+  }, [initAuthProvider]);
 
   /**
    * Login
    */
-  const login = async (credentials: LoginDto) => {
+  const login = async (credentials: LoginCredentials) => {
     setIsLoading(true);
     try {
-      const response = await authApi.login(credentials);
+      const provider = authProviderRef.current || await getAuthProvider();
+      const response = await provider.login(credentials);
       setUser(response.user);
+      setIsAuthenticated(true);
     } catch (error) {
       setUser(null);
+      setIsAuthenticated(false);
       throw error;
     } finally {
       setIsLoading(false);
@@ -80,13 +99,16 @@ export function AuthProvider({ children }: AuthProviderProps) {
   /**
    * Registro
    */
-  const register = async (data: RegisterDto) => {
+  const register = async (data: RegisterData) => {
     setIsLoading(true);
     try {
-      const response = await authApi.register(data);
+      const provider = authProviderRef.current || await getAuthProvider();
+      const response = await provider.register(data);
       setUser(response.user);
+      setIsAuthenticated(true);
     } catch (error) {
       setUser(null);
+      setIsAuthenticated(false);
       throw error;
     } finally {
       setIsLoading(false);
@@ -99,8 +121,10 @@ export function AuthProvider({ children }: AuthProviderProps) {
   const logout = async () => {
     setIsLoading(true);
     try {
-      await authApi.logout();
+      const provider = authProviderRef.current || await getAuthProvider();
+      await provider.logout();
       setUser(null);
+      setIsAuthenticated(false);
     } catch (error) {
       console.error('Erro ao fazer logout:', error);
     } finally {
@@ -112,14 +136,11 @@ export function AuthProvider({ children }: AuthProviderProps) {
    * Atualiza dados do usuário
    */
   const refreshUser = async () => {
-    if (authApi.isAuthenticated()) {
-      try {
-        const userData = await authApi.getProfile();
-        setUser(userData);
-      } catch (error) {
-        console.error('Erro ao atualizar perfil:', error);
-        throw error;
-      }
+    const provider = authProviderRef.current || await getAuthProvider();
+    const currentUser = provider.getCurrentUser();
+    if (currentUser) {
+      setUser(currentUser);
+      setIsAuthenticated(true);
     }
   };
 
@@ -127,6 +148,7 @@ export function AuthProvider({ children }: AuthProviderProps) {
     user,
     isLoading,
     isAuthenticated,
+    providerType,
     login,
     register,
     logout,

@@ -120,3 +120,206 @@ Configure os seguintes secrets no GitHub:
 | `FIREBASE_MESSAGING_SENDER_ID` | Messaging Sender ID |
 | `FIREBASE_APP_ID` | App ID |
 | `ENCRYPTION_KEY` | Chave de criptografia (32+ chars) |
+
+## Diagramas de Sequência
+
+### Autenticação Firebase
+
+```mermaid
+sequenceDiagram
+    participant U as Usuário
+    participant App as NeuroCare App
+    participant FAP as Firebase Auth Provider
+    participant FA as Firebase Auth
+    participant FS as Firestore
+
+    Note over U,FS: Registro de Novo Usuário
+
+    U->>App: Preenche formulário de registro
+    App->>FAP: register(data)
+    FAP->>FA: createUserWithEmailAndPassword(email, password)
+    FA-->>FAP: Firebase User (uid)
+
+    FAP->>FS: setDoc(users/{uid}, userData)
+    FS-->>FAP: OK
+
+    FAP-->>App: { user }
+    App->>U: Redireciona para Dashboard
+
+    Note over U,FS: Login
+
+    U->>App: Preenche email e senha
+    App->>FAP: login(credentials)
+    FAP->>FA: signInWithEmailAndPassword(email, password)
+    FA-->>FAP: Firebase User (uid)
+
+    FAP->>FS: getDoc(users/{uid})
+    FS-->>FAP: User data
+
+    FAP-->>App: { user }
+    App->>U: Redireciona para Dashboard
+
+    Note over U,FS: Verificação de Estado de Auth
+
+    App->>FAP: onAuthStateChange(callback)
+    FAP->>FA: onAuthStateChanged(auth, handler)
+
+    Note over FA: Usuário faz login em outra aba
+    FA-->>FAP: authStateChanged(user)
+    FAP->>FS: getDoc(users/{uid})
+    FS-->>FAP: User data
+    FAP-->>App: callback(user)
+    App->>App: Atualiza estado global
+```
+
+### CRUD de Pacientes no Firestore
+
+```mermaid
+sequenceDiagram
+    participant App as NeuroCare App
+    participant FPP as Firebase Patients Provider
+    participant ES as Encryption Service
+    participant FS as Firestore
+
+    Note over App,FS: Criar Paciente
+
+    App->>ES: encrypt(historicoMedico)
+    ES-->>App: encryptedData
+
+    App->>FPP: create(patientData)
+    FPP->>FS: addDoc(patients, { ...data, historicoMedicoEnc })
+    FS-->>FPP: DocumentReference (id)
+    FPP-->>App: { id, ...patientData }
+
+    Note over App,FS: Buscar Pacientes
+
+    App->>FPP: search("João")
+    FPP->>FS: query(patients, where nome contains "João")
+    FS-->>FPP: QuerySnapshot
+
+    loop Para cada documento
+        FPP->>ES: decrypt(doc.historicoMedicoEnc)
+        ES-->>FPP: historicoMedico
+    end
+
+    FPP-->>App: Patient[]
+
+    Note over App,FS: Atualizar Paciente
+
+    App->>ES: encrypt(historicoMedico)
+    ES-->>App: encryptedData
+
+    App->>FPP: update(id, updates)
+    FPP->>FS: updateDoc(patients/{id}, { ...updates, updatedAt })
+    FS-->>FPP: OK
+    FPP-->>App: Updated patient
+
+    Note over App,FS: Excluir Paciente
+
+    App->>FPP: delete(id)
+    FPP->>FS: deleteDoc(patients/{id})
+    FS-->>FPP: OK
+    FPP-->>App: void
+```
+
+### Persistência Offline do Firestore
+
+```mermaid
+sequenceDiagram
+    participant U as Usuário
+    participant App as NeuroCare App
+    participant FS as Firestore SDK
+    participant IDB as IndexedDB (Firestore Cache)
+    participant Net as Firebase Servers
+
+    Note over U,Net: Inicialização com Persistência
+
+    App->>FS: initializeFirestore()
+    App->>FS: enableIndexedDbPersistence(db)
+    FS->>IDB: Cria cache local
+    IDB-->>FS: OK
+    FS-->>App: Persistência habilitada
+
+    Note over U,Net: Operação Online
+
+    U->>App: Cria paciente
+    App->>FS: addDoc(patients, data)
+    FS->>Net: Envia para servidor
+    Net-->>FS: Confirmação
+    FS->>IDB: Atualiza cache local
+    FS-->>App: DocumentReference
+
+    Note over U,Net: Operação Offline
+
+    Note over Net: Conexão perdida
+    U->>App: Cria outro paciente
+    App->>FS: addDoc(patients, data)
+    FS->>IDB: Salva no cache local
+    FS-->>App: DocumentReference (pendente)
+
+    Note over FS: Operação enfileirada
+
+    Note over Net: Conexão restaurada
+    FS->>Net: Sincroniza operações pendentes
+    Net-->>FS: Confirmação
+    FS->>IDB: Atualiza status
+
+    Note over U,Net: Leitura Offline
+
+    Note over Net: Sem conexão
+    U->>App: Lista pacientes
+    App->>FS: getDocs(patients)
+    FS->>IDB: Busca no cache
+    IDB-->>FS: Documentos cacheados
+    FS-->>App: QuerySnapshot (do cache)
+    App->>U: Exibe lista
+```
+
+### Fluxo de Segurança (Security Rules)
+
+```mermaid
+sequenceDiagram
+    participant U as Usuário
+    participant App as NeuroCare App
+    participant FS as Firestore SDK
+    participant SR as Security Rules
+    participant DB as Firestore Database
+
+    Note over U,DB: Acesso Autorizado
+
+    U->>App: Login
+    App->>App: Obtém Firebase Auth Token
+
+    U->>App: Solicita lista de pacientes
+    App->>FS: getDocs(patients)
+    FS->>SR: Verifica: isAuthenticated()
+    SR->>SR: request.auth != null?
+    Note over SR: ✅ Usuário autenticado
+    SR-->>FS: Permitido
+    FS->>DB: Executa query
+    DB-->>FS: Documentos
+    FS-->>App: QuerySnapshot
+    App->>U: Exibe dados
+
+    Note over U,DB: Acesso a Dados de Outro Usuário
+
+    U->>App: Tenta acessar /users/{outroUserId}
+    App->>FS: getDoc(users/{outroUserId})
+    FS->>SR: Verifica regra de users
+    SR->>SR: request.auth.uid == userId?
+    Note over SR: ❌ UIDs diferentes
+    SR-->>FS: Negado
+    FS-->>App: Permission Denied Error
+    App->>U: "Acesso não autorizado"
+
+    Note over U,DB: Acesso Não Autenticado
+
+    Note over App: Usuário não logado
+    App->>FS: getDocs(patients)
+    FS->>SR: Verifica: isAuthenticated()
+    SR->>SR: request.auth != null?
+    Note over SR: ❌ request.auth é null
+    SR-->>FS: Negado
+    FS-->>App: Permission Denied Error
+    App->>U: Redireciona para /login
+```
