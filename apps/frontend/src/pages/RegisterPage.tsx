@@ -2,7 +2,7 @@ import { useState } from 'react'
 import { Link, useNavigate } from 'react-router-dom'
 import { useAuth } from '@/contexts/AuthContext'
 import { Button, Input, Card } from '@/components/ui'
-import { validateForm, getPasswordStrength } from '@/utils/validation'
+import { validateForm, getPasswordStrength, formatCRM } from '@/utils/validation'
 
 export function RegisterPage() {
   const [nome, setNome] = useState('')
@@ -142,9 +142,10 @@ export function RegisterPage() {
               label="CRM"
               type="text"
               value={crm}
-              onChange={(e) => { setCrm(e.target.value); clearFieldError('crm') }}
-              placeholder="12345-SP"
+              onChange={(e) => { setCrm(formatCRM(e.target.value)); clearFieldError('crm') }}
+              placeholder="123456-SP"
               error={fieldErrors.crm}
+              maxLength={9}
             />
 
             <Input

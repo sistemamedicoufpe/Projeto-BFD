@@ -3,7 +3,7 @@ import { useNavigate } from 'react-router-dom';
 import { Button, Input, Card, CardHeader, CardContent, TagInput } from '@/components/ui';
 import { patientsApi } from '../../services/api';
 import type { Gender } from '@neurocare/shared-types';
-import { validateForm, formatCPF, formatPhone, formatCEP } from '@/utils/validation';
+import { validateForm, formatCPF, formatPhone, formatCEP, formatRG, formatUF } from '@/utils/validation';
 
 interface PatientFormProps {
   patientId?: string;
@@ -150,6 +150,10 @@ export function PatientForm({ patientId, onSuccess, onCancel }: PatientFormProps
       formattedValue = formatPhone(value);
     } else if (name === 'cep') {
       formattedValue = formatCEP(value);
+    } else if (name === 'rg') {
+      formattedValue = formatRG(value);
+    } else if (name === 'estado') {
+      formattedValue = formatUF(value);
     }
 
     setFormData(prev => ({ ...prev, [name]: formattedValue }));
@@ -344,6 +348,7 @@ export function PatientForm({ patientId, onSuccess, onCancel }: PatientFormProps
                 value={formData.rg}
                 onChange={handleChange}
                 placeholder="00.000.000-0"
+                maxLength={12}
               />
             </div>
 
@@ -453,15 +458,14 @@ export function PatientForm({ patientId, onSuccess, onCancel }: PatientFormProps
             </div>
 
             <div>
-              <label htmlFor="cep" className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
-                CEP
-              </label>
               <Input
                 id="cep"
                 name="cep"
                 type="text"
+                label="CEP"
                 value={formData.cep}
                 onChange={handleChange}
+                error={fieldErrors.cep}
                 placeholder="00000-000"
                 maxLength={9}
               />
@@ -560,16 +564,16 @@ export function PatientForm({ patientId, onSuccess, onCancel }: PatientFormProps
             </div>
 
             <div>
-              <label htmlFor="telefoneResponsavel" className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
-                Telefone do Responsável
-              </label>
               <Input
                 id="telefoneResponsavel"
                 name="telefoneResponsavel"
                 type="tel"
+                label="Telefone do Responsável"
                 value={formData.telefoneResponsavel}
                 onChange={handleChange}
+                error={fieldErrors.telefoneResponsavel}
                 placeholder="(00) 00000-0000"
+                maxLength={15}
               />
             </div>
           </div>

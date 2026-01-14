@@ -297,3 +297,34 @@ export function formatCEP(cep: string): string {
   if (clean.length <= 5) return clean
   return `${clean.slice(0, 5)}-${clean.slice(5)}`
 }
+
+/**
+ * Formata um RG (formato comum: XX.XXX.XXX-X)
+ */
+export function formatRG(rg: string): string {
+  const clean = rg.replace(/\D/g, '').slice(0, 9)
+  if (clean.length <= 2) return clean
+  if (clean.length <= 5) return `${clean.slice(0, 2)}.${clean.slice(2)}`
+  if (clean.length <= 8) return `${clean.slice(0, 2)}.${clean.slice(2, 5)}.${clean.slice(5)}`
+  return `${clean.slice(0, 2)}.${clean.slice(2, 5)}.${clean.slice(5, 8)}-${clean.slice(8)}`
+}
+
+/**
+ * Formata um CRM (formato: 123456-UF)
+ */
+export function formatCRM(crm: string): string {
+  // Separa números e letras
+  const numbers = crm.replace(/\D/g, '').slice(0, 6)
+  const letters = crm.replace(/[^a-zA-Z]/g, '').slice(0, 2).toUpperCase()
+
+  if (!numbers) return ''
+  if (!letters) return numbers
+  return `${numbers}-${letters}`
+}
+
+/**
+ * Formata Estado (UF) - apenas 2 letras maiúsculas
+ */
+export function formatUF(uf: string): string {
+  return uf.replace(/[^a-zA-Z]/g, '').slice(0, 2).toUpperCase()
+}
