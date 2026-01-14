@@ -1,0 +1,25 @@
+# Claude Code
+.claude/
+CLAUDE.md
+claude.md
+tmpclaude-*-cwd
+nul
+
+# Node modules
+node_modules/
+
+# Build outputs
+dist/
+build/
+
+# Environment variables
+.env
+.env.local
+
+# Test outputs
+test-results/
+playwright-report/
+
+# Editor
+.vscode/
+.idea/

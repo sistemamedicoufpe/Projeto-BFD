@@ -1,0 +1,325 @@
+// This is your Prisma schema file,
+// learn more about it in the docs: https://pris.ly/d/prisma-schema
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+// Enums
+enum UserRole {
+  ADMIN
+  DOCTOR
+  NURSE
+  RECEPTIONIST
+}
+
+enum Gender {
+  MALE
+  FEMALE
+  OTHER
+  PREFER_NOT_TO_SAY
+}
+
+enum EvaluationStatus {
+  PENDING
+  IN_PROGRESS
+  COMPLETED
+  CANCELLED
+}
+
+enum ExamType {
+  MRI
+  CT_SCAN
+  EEG
+  NEUROPSYCHOLOGICAL
+  BLOOD_TEST
+  PET_SCAN
+  SPECT
+  OTHER
+}
+
+enum ReportStatus {
+  DRAFT
+  PENDING_REVIEW
+  APPROVED
+  PUBLISHED
+}
+
+enum SyncStatus {
+  PENDING
+  SYNCING
+  COMPLETED
+  FAILED
+}
+
+// Models
+model User {
+  id               String    @id @default(uuid())
+  email            String    @unique
+  passwordHash     String
+  name             String
+  role             UserRole  @default(DOCTOR)
+  crm              String?   @unique // Medical license number
+  phone            String?
+  avatar           String?
+  twoFactorEnabled Boolean   @default(false)
+  twoFactorSecret  String?
+  isActive         Boolean   @default(true)
+  lastLogin        DateTime?
+
+  // Timestamps
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  // Relations
+  refreshTokens RefreshToken[]
+  evaluations   Evaluation[]
+  reports       Report[]
+  auditLogs     AuditLog[]
+
+  @@index([email])
+  @@index([role])
+  @@map("users")
+}
+
+model RefreshToken {
+  id        String   @id @default(uuid())
+  token     String   @unique
+  userId    String
+  expiresAt DateTime
+  createdAt DateTime @default(now())
+
+  // Relations
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([userId])
+  @@index([token])
+  @@map("refresh_tokens")
+}
+
+model Patient {
+  id                   String    @id @default(uuid())
+  nome                 String
+  cpf                  String    @unique
+  rg                   String?
+  dataNascimento       DateTime
+  idade                Int
+  genero               Gender
+  email                String?
+  telefone             String?
+  celular              String?
+  enderecoCompleto     String?
+  cep                  String?
+  cidade               String?
+  estado               String?
+
+  // Encrypted medical data
+  historicoMedicoEnc   String?   @db.Text // Encrypted JSON
+  alergias             String[]
+  medicamentosEmUso    String[]
+
+  // Additional info
+  nomeResponsavel      String?
+  telefoneResponsavel  String?
+  observacoes          String?   @db.Text
+
+  // Sync metadata
+  isDeleted            Boolean   @default(false)
+  lastSyncAt           DateTime?
+  version              Int       @default(1)
+
+  // Timestamps
+  createdAt            DateTime  @default(now())
+  updatedAt            DateTime  @updatedAt
+
+  // Relations
+  evaluations          Evaluation[]
+  exams                Exam[]
+  reports              Report[]
+
+  @@index([cpf])
+  @@index([nome])
+  @@index([createdAt])
+  @@map("patients")
+}
+
+model Evaluation {
+  id                    String            @id @default(uuid())
+  patientId             String
+  userId                String
+  dataAvaliacao         DateTime          @default(now())
+  status                EvaluationStatus  @default(PENDING)
+
+  // Clinical data (encrypted)
+  queixaPrincipal       String?           @db.Text
+  historiaDoenca        String?           @db.Text
+  exameClinicoEnc       String?           @db.Text // Encrypted JSON
+
+  // Cognitive tests results (encrypted)
+  mmseResultEnc         String?           @db.Text // Encrypted MMSE result
+  mocaResultEnc         String?           @db.Text // Encrypted MoCA result
+  clockTestEnc          String?           @db.Text // Encrypted Clock Test result
+
+  // Diagnosis
+  hipoteseDiagnostica   String?           @db.Text
+  cid10                 String?
+
+  // Metadata
+  isDeleted             Boolean   @default(false)
+  lastSyncAt            DateTime?
+  version               Int       @default(1)
+
+  // Timestamps
+  createdAt             DateTime  @default(now())
+  updatedAt             DateTime  @updatedAt
+
+  // Relations
+  patient               Patient   @relation(fields: [patientId], references: [id], onDelete: Cascade)
+  user                  User      @relation(fields: [userId], references: [id])
+  exams                 Exam[]
+  reports               Report[]
+
+  @@index([patientId])
+  @@index([userId])
+  @@index([dataAvaliacao])
+  @@map("evaluations")
+}
+
+model Exam {
+  id                String    @id @default(uuid())
+  patientId         String
+  evaluationId      String?
+  tipo              ExamType
+  dataExame         DateTime
+
+  // File storage
+  arquivoUrl        String?
+  arquivoNome       String?
+  arquivoTamanho    Int?
+  arquivoMimeType   String?
+
+  // Metadata encrypted
+  laudoEnc          String?   @db.Text // Encrypted report
+  observacoesEnc    String?   @db.Text // Encrypted observations
+
+  // AI analysis
+  aiAnalysisEnc     String?   @db.Text // Encrypted AI predictions
+
+  // Sync metadata
+  isDeleted         Boolean   @default(false)
+  lastSyncAt        DateTime?
+  version           Int       @default(1)
+
+  // Timestamps
+  createdAt         DateTime  @default(now())
+  updatedAt         DateTime  @updatedAt
+
+  // Relations
+  patient           Patient     @relation(fields: [patientId], references: [id], onDelete: Cascade)
+  evaluation        Evaluation? @relation(fields: [evaluationId], references: [id], onDelete: SetNull)
+
+  @@index([patientId])
+  @@index([evaluationId])
+  @@index([tipo])
+  @@map("exams")
+}
+
+model Report {
+  id              String        @id @default(uuid())
+  patientId       String
+  evaluationId    String?
+  userId          String
+  titulo          String
+  status          ReportStatus  @default(DRAFT)
+
+  // Content (encrypted)
+  conteudoEnc     String        @db.Text // Encrypted JSON with structured content
+
+  // PDF generation
+  pdfUrl          String?
+  pdfGeneratedAt  DateTime?
+
+  // Metadata
+  isDeleted       Boolean       @default(false)
+  lastSyncAt      DateTime?
+  version         Int           @default(1)
+
+  // Timestamps
+  createdAt       DateTime      @default(now())
+  updatedAt       DateTime      @updatedAt
+  publishedAt     DateTime?
+
+  // Relations
+  patient         Patient       @relation(fields: [patientId], references: [id], onDelete: Cascade)
+  evaluation      Evaluation?   @relation(fields: [evaluationId], references: [id], onDelete: SetNull)
+  user            User          @relation(fields: [userId], references: [id])
+
+  @@index([patientId])
+  @@index([evaluationId])
+  @@index([userId])
+  @@map("reports")
+}
+
+model AuditLog {
+  id         String   @id @default(uuid())
+  userId     String?
+  userName   String
+  action     String
+  resource   String
+  resourceId String?
+  ipAddress  String
+  userAgent  String
+  details    Json?
+  result     String   // 'success' or 'failure'
+  timestamp  DateTime @default(now())
+
+  // Relations
+  user User? @relation(fields: [userId], references: [id], onDelete: SetNull)
+
+  @@index([userId])
+  @@index([action])
+  @@index([timestamp])
+  @@map("audit_logs")
+}
+
+model SyncQueue {
+  id            String     @id @default(uuid())
+  clientId      String     // Device/browser identifier
+  entityType    String     // 'patient', 'evaluation', etc.
+  entityId      String
+  operation     String     // 'create', 'update', 'delete'
+  payload       Json
+  status        SyncStatus @default(PENDING)
+  attempts      Int        @default(0)
+  lastAttemptAt DateTime?
+  error         String?    @db.Text
+
+  // Timestamps
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@index([clientId])
+  @@index([status])
+  @@index([createdAt])
+  @@map("sync_queue")
+}
+
+model EncryptionKey {
+  id           String    @id @default(uuid())
+  keyId        String    @unique
+  encryptedKey String    @db.Text // Key encrypted with master key
+  algorithm    String    @default("AES-256-GCM")
+  isActive     Boolean   @default(true)
+  rotatedAt    DateTime?
+
+  // Timestamps
+  createdAt DateTime @default(now())
+
+  @@index([keyId])
+  @@map("encryption_keys")
+}

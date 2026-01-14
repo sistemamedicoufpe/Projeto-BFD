@@ -1,4 +1,77 @@
-# Claude Code
-.claude/
+# Dependencies
+node_modules
+.pnp
+.pnp.js
+
+# Testing
+coverage
+*.lcov
+.nyc_output
+
+# Production
+dist
+build
+.next
+out
+
+# Environment variables
+.env
+.env.local
+.env.*.local
+.env.production
+
+# Logs
+logs
+*.log
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+lerna-debug.log*
+.pnpm-debug.log*
+
+# OS
+.DS_Store
+Thumbs.db
+*.swp
+*.swo
+*~
+
+# IDE
+.vscode
+.idea
+*.sublime-project
+*.sublime-workspace
+
+# Turbo
+.turbo
+
+# Prisma
+**/prisma/migrations/**/migration.sql.backup
+
+# Temporary files
+tmp
+temp
+*.tmp
+tmpclaude-*
+
+# Database
+*.db
+*.sqlite
+*.sqlite3
+
+# Cache
+.cache
+.parcel-cache
+.eslintcache
+
+# Docker volumes
+docker-data
+
+# Development files (contains secrets)
 CLAUDE.md
-claude.md
+*.local.md
+
+# Progress files (not versioned)
+*-PROGRESSO.md
+*-COMPLETA.md
+STATUS.md
