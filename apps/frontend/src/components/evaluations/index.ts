@@ -3,3 +3,4 @@ export { MoCATest } from './MoCATest';
 export { ClockDrawingTest } from './ClockDrawingTest';
 export { AIAnalysisPanel } from './AIAnalysisPanel';
 export { LongitudinalAIAnalysis } from './LongitudinalAIAnalysis';
+export { ExamAICorrelation } from './ExamAICorrelation';

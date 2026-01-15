@@ -3,8 +3,9 @@ import { useParams, useNavigate } from 'react-router-dom'
 import { Layout } from '@/components/layout'
 import { Card, CardHeader, CardContent, Button } from '@/components/ui'
 import { ConfirmModal } from '@/components/ui/Modal'
-import { getExamsProvider, getPatientsProvider } from '@/services/providers/factory/provider-factory'
-import type { IExamsProvider, IPatientsProvider, ProviderExam, ProviderPatient } from '@/services/providers/types'
+import { ExamAICorrelation } from '@/components/evaluations'
+import { getExamsProvider, getPatientsProvider, getEvaluationsProvider } from '@/services/providers/factory/provider-factory'
+import type { IExamsProvider, IPatientsProvider, IEvaluationsProvider, ProviderExam, ProviderPatient, ProviderEvaluation } from '@/services/providers/types'
 import { ExamType } from '@/types'
 
 const examTypeLabels: Record<ExamType, string> = {
@@ -42,12 +43,14 @@ export function ExamDetailPage() {
   const navigate = useNavigate()
   const [exam, setExam] = useState<ProviderExam | null>(null)
   const [patient, setPatient] = useState<ProviderPatient | null>(null)
+  const [evaluations, setEvaluations] = useState<ProviderEvaluation[]>([])
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState<string | null>(null)
   const [showDeleteModal, setShowDeleteModal] = useState(false)
   const [deleting, setDeleting] = useState(false)
   const examsProviderRef = useRef<IExamsProvider | null>(null)
   const patientsProviderRef = useRef<IPatientsProvider | null>(null)
+  const evaluationsProviderRef = useRef<IEvaluationsProvider | null>(null)
 
   useEffect(() => {
     loadExam()
@@ -75,13 +78,24 @@ export function ExamDetailPage() {
       } else {
         setExam(examData)
 
-        // Carrega dados do paciente
+        // Carrega dados do paciente e avaliações
         if (examData.patientId) {
           if (!patientsProviderRef.current) {
             patientsProviderRef.current = await getPatientsProvider()
           }
-          const patientData = await patientsProviderRef.current.getById(examData.patientId)
+          if (!evaluationsProviderRef.current) {
+            evaluationsProviderRef.current = await getEvaluationsProvider()
+          }
+
+          const [patientData, allEvaluations] = await Promise.all([
+            patientsProviderRef.current.getById(examData.patientId),
+            evaluationsProviderRef.current.getAll()
+          ])
+
           setPatient(patientData || null)
+          // Filtra avaliações do paciente
+          const patientEvaluations = allEvaluations.filter(e => e.patientId === examData.patientId)
+          setEvaluations(patientEvaluations)
         }
       }
     } catch (err) {
@@ -268,6 +282,9 @@ export function ExamDetailPage() {
             </CardContent>
           </Card>
         )}
+
+        {/* AI Correlation */}
+        <ExamAICorrelation exam={exam} relatedEvaluations={evaluations} />
 
         {/* Metadados */}
         <div className="text-sm text-gray-500 dark:text-gray-400">
