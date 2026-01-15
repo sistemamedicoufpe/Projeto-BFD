@@ -34,6 +34,7 @@ export function ExamCreatePage() {
     descricao: string
     resultado: string
     dados: Record<string, any>
+    arquivos?: Array<{ nome: string; tipo: string; dados: string }>
   }>({
     patientId: '',
     tipo: 'EEG',
@@ -41,6 +42,7 @@ export function ExamCreatePage() {
     descricao: '',
     resultado: '',
     dados: {},
+    arquivos: [],
   })
 
   useEffect(() => {
@@ -121,7 +123,10 @@ export function ExamCreatePage() {
         dataRealizacao: new Date(formData.dataRealizacao).toISOString(),
         descricao: formData.descricao || undefined,
         resultado: formData.resultado || undefined,
-        dados: Object.keys(formData.dados).length > 0 ? formData.dados : undefined,
+        dados: Object.keys(formData.dados).length > 0 ? {
+          ...formData.dados,
+          arquivos: formData.arquivos && formData.arquivos.length > 0 ? formData.arquivos : undefined
+        } : { arquivos: formData.arquivos && formData.arquivos.length > 0 ? formData.arquivos : undefined },
         _synced: false,
       }
 
@@ -154,6 +159,45 @@ export function ExamCreatePage() {
         ...prev.dados,
         [field]: value,
       },
+    }))
+  }
+
+  const handleFileUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    const files = e.target.files
+    if (!files || files.length === 0) return
+
+    try {
+      const arquivosPromises = Array.from(files).map((file) => {
+        return new Promise<{ nome: string; tipo: string; dados: string }>((resolve, reject) => {
+          const reader = new FileReader()
+          reader.onload = () => {
+            const base64 = reader.result as string
+            resolve({
+              nome: file.name,
+              tipo: file.type,
+              dados: base64,
+            })
+          }
+          reader.onerror = reject
+          reader.readAsDataURL(file)
+        })
+      })
+
+      const novosArquivos = await Promise.all(arquivosPromises)
+      setFormData((prev) => ({
+        ...prev,
+        arquivos: [...(prev.arquivos || []), ...novosArquivos],
+      }))
+    } catch (err) {
+      console.error('Erro ao fazer upload dos arquivos:', err)
+      setError('Erro ao fazer upload dos arquivos')
+    }
+  }
+
+  const handleRemoveFile = (index: number) => {
+    setFormData((prev) => ({
+      ...prev,
+      arquivos: prev.arquivos?.filter((_, i) => i !== index),
     }))
   }
 
@@ -250,6 +294,72 @@ export function ExamCreatePage() {
                     placeholder="Resultado do exame..."
                   />
                 </div>
+              </div>
+            </CardContent>
+          </Card>
+
+          {/* Upload de Arquivos */}
+          <Card>
+            <CardHeader
+              title="Arquivos do Exame"
+              subtitle="Faça upload de imagens, PDFs, DICOM ou outros arquivos relacionados ao exame"
+            />
+            <CardContent>
+              <div className="space-y-4">
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
+                    Selecionar Arquivos
+                  </label>
+                  <input
+                    type="file"
+                    multiple
+                    onChange={handleFileUpload}
+                    className="w-full px-4 py-2 border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-700 text-gray-900 dark:text-gray-100 focus:ring-2 focus:ring-primary-500 focus:border-transparent file:mr-4 file:py-2 file:px-4 file:rounded-lg file:border-0 file:text-sm file:font-medium file:bg-primary-50 dark:file:bg-primary-900/30 file:text-primary-700 dark:file:text-primary-300 hover:file:bg-primary-100 dark:hover:file:bg-primary-900/50"
+                    accept="image/*,.pdf,.dcm,.dicom"
+                  />
+                  <p className="mt-1 text-xs text-gray-500 dark:text-gray-400">
+                    Formatos aceitos: Imagens (JPG, PNG), PDF, DICOM. Tamanho máximo: 10MB por arquivo
+                  </p>
+                </div>
+
+                {/* Lista de arquivos */}
+                {formData.arquivos && formData.arquivos.length > 0 && (
+                  <div className="mt-4">
+                    <h4 className="text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
+                      Arquivos anexados ({formData.arquivos.length})
+                    </h4>
+                    <div className="space-y-2">
+                      {formData.arquivos.map((arquivo, index) => (
+                        <div
+                          key={index}
+                          className="flex items-center justify-between p-3 bg-gray-50 dark:bg-gray-800 rounded-lg border border-gray-200 dark:border-gray-700"
+                        >
+                          <div className="flex items-center gap-3 flex-1 min-w-0">
+                            <span className="text-2xl">
+                              {arquivo.tipo.startsWith('image/') ? '🖼️' : arquivo.tipo === 'application/pdf' ? '📄' : '📋'}
+                            </span>
+                            <div className="flex-1 min-w-0">
+                              <p className="text-sm font-medium text-gray-900 dark:text-gray-100 truncate">
+                                {arquivo.nome}
+                              </p>
+                              <p className="text-xs text-gray-500 dark:text-gray-400">
+                                {arquivo.tipo}
+                              </p>
+                            </div>
+                          </div>
+                          <button
+                            type="button"
+                            onClick={() => handleRemoveFile(index)}
+                            className="ml-3 text-red-600 dark:text-red-400 hover:text-red-800 dark:hover:text-red-300 p-2 rounded-lg hover:bg-red-50 dark:hover:bg-red-900/20"
+                            aria-label={`Remover arquivo ${arquivo.nome}`}
+                          >
+                            🗑️
+                          </button>
+                        </div>
+                      ))}
+                    </div>
+                  </div>
+                )}
               </div>
             </CardContent>
           </Card>

@@ -8,7 +8,7 @@ import type { IEvaluationsProvider, IPatientsProvider, ProviderPatient } from '@
 import { validateForm } from '@/utils/validation';
 import { useAuth } from '@/contexts/AuthContext';
 
-type Step = 'basic-info' | 'test-selection' | 'mmse-test' | 'moca-test' | 'clock-test' | 'review';
+type Step = 'basic-info' | 'neurological-exam' | 'test-selection' | 'mmse-test' | 'moca-test' | 'clock-test' | 'review';
 
 interface MMSEResult {
   totalScore: number;
@@ -66,6 +66,27 @@ interface SelectedTests {
   clockDrawing: boolean;
 }
 
+interface NeurologicalExam {
+  consciencia: string;
+  orientacao: string;
+  atencao: string;
+  memoria: string;
+  linguagem: string;
+  praxia: string;
+  gnosia: string;
+  funcaoExecutiva: string;
+  humor: string;
+  comportamento: string;
+  nervosCranianos: string;
+  motor: string;
+  sensibilidade: string;
+  reflexos: string;
+  coordenacao: string;
+  marcha: string;
+  sinaisMeningeos: string;
+  observacoes: string;
+}
+
 export function EvaluationCreatePage() {
   const navigate = useNavigate();
   const { user } = useAuth();
@@ -95,6 +116,27 @@ export function EvaluationCreatePage() {
     mmse: true,
     moca: false,
     clockDrawing: false,
+  });
+
+  const [neurologicalExam, setNeurologicalExam] = useState<NeurologicalExam>({
+    consciencia: '',
+    orientacao: '',
+    atencao: '',
+    memoria: '',
+    linguagem: '',
+    praxia: '',
+    gnosia: '',
+    funcaoExecutiva: '',
+    humor: '',
+    comportamento: '',
+    nervosCranianos: '',
+    motor: '',
+    sensibilidade: '',
+    reflexos: '',
+    coordenacao: '',
+    marcha: '',
+    sinaisMeningeos: '',
+    observacoes: '',
   });
 
   const [mmseResult, setMmseResult] = useState<MMSEResult | null>(null);
@@ -163,6 +205,16 @@ export function EvaluationCreatePage() {
       return;
     }
     setError(null);
+    setStep('neurological-exam');
+  };
+
+  const handleNeurologicalExamChange = (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>) => {
+    const { name, value } = e.target;
+    setNeurologicalExam(prev => ({ ...prev, [name]: value }));
+  };
+
+  const handleNeurologicalExamNext = () => {
+    setError(null);
     setStep('test-selection');
   };
 
@@ -230,7 +282,7 @@ export function EvaluationCreatePage() {
         medico: user?.nome ? `Dr(a). ${user.nome}` : 'Medico nao identificado',
         queixaPrincipal: basicInfo.queixaPrincipal,
         historiaDoenca: basicInfo.historicoDoencaAtual || '',
-        exameNeurologico: {},
+        exameNeurologico: neurologicalExam,
         hipoteseDiagnostica: basicInfo.hipoteseDiagnostica ? [{
           diagnostico: basicInfo.hipoteseDiagnostica,
           probabilidade: 50,
@@ -263,11 +315,12 @@ export function EvaluationCreatePage() {
   const getStepNumber = (): number => {
     switch (step) {
       case 'basic-info': return 1;
-      case 'test-selection': return 2;
+      case 'neurological-exam': return 2;
+      case 'test-selection': return 3;
       case 'mmse-test':
       case 'moca-test':
-      case 'clock-test': return 3;
-      case 'review': return 4;
+      case 'clock-test': return 4;
+      case 'review': return 5;
       default: return 1;
     }
   };
@@ -288,41 +341,50 @@ export function EvaluationCreatePage() {
         </div>
 
         {/* Progress Steps */}
-        <div className="flex items-center justify-center space-x-4">
+        <div className="flex items-center justify-center space-x-2 overflow-x-auto">
           <div className={`flex items-center ${getStepNumber() >= 1 ? 'text-primary-600' : 'text-gray-400'}`}>
             <div className={`w-8 h-8 rounded-full flex items-center justify-center border-2 ${
               getStepNumber() >= 1 ? 'border-primary-600 bg-primary-50 dark:bg-primary-900/30' : 'border-gray-300'
             }`}>
               1
             </div>
-            <span className="ml-2 font-medium hidden sm:inline">Informacoes</span>
+            <span className="ml-2 font-medium hidden md:inline">Dados</span>
           </div>
-          <div className="w-8 sm:w-16 h-0.5 bg-gray-300"></div>
+          <div className="w-6 sm:w-12 h-0.5 bg-gray-300"></div>
           <div className={`flex items-center ${getStepNumber() >= 2 ? 'text-primary-600' : 'text-gray-400'}`}>
             <div className={`w-8 h-8 rounded-full flex items-center justify-center border-2 ${
               getStepNumber() >= 2 ? 'border-primary-600 bg-primary-50 dark:bg-primary-900/30' : 'border-gray-300'
             }`}>
               2
             </div>
-            <span className="ml-2 font-medium hidden sm:inline">Selecao</span>
+            <span className="ml-2 font-medium hidden md:inline">Exame</span>
           </div>
-          <div className="w-8 sm:w-16 h-0.5 bg-gray-300"></div>
+          <div className="w-6 sm:w-12 h-0.5 bg-gray-300"></div>
           <div className={`flex items-center ${getStepNumber() >= 3 ? 'text-primary-600' : 'text-gray-400'}`}>
             <div className={`w-8 h-8 rounded-full flex items-center justify-center border-2 ${
               getStepNumber() >= 3 ? 'border-primary-600 bg-primary-50 dark:bg-primary-900/30' : 'border-gray-300'
             }`}>
               3
             </div>
-            <span className="ml-2 font-medium hidden sm:inline">{getTestStepLabel()}</span>
+            <span className="ml-2 font-medium hidden md:inline">Testes</span>
           </div>
-          <div className="w-8 sm:w-16 h-0.5 bg-gray-300"></div>
+          <div className="w-6 sm:w-12 h-0.5 bg-gray-300"></div>
           <div className={`flex items-center ${getStepNumber() >= 4 ? 'text-primary-600' : 'text-gray-400'}`}>
             <div className={`w-8 h-8 rounded-full flex items-center justify-center border-2 ${
               getStepNumber() >= 4 ? 'border-primary-600 bg-primary-50 dark:bg-primary-900/30' : 'border-gray-300'
             }`}>
               4
             </div>
-            <span className="ml-2 font-medium hidden sm:inline">Revisao</span>
+            <span className="ml-2 font-medium hidden md:inline">Aplicar</span>
+          </div>
+          <div className="w-6 sm:w-12 h-0.5 bg-gray-300"></div>
+          <div className={`flex items-center ${getStepNumber() >= 5 ? 'text-primary-600' : 'text-gray-400'}`}>
+            <div className={`w-8 h-8 rounded-full flex items-center justify-center border-2 ${
+              getStepNumber() >= 5 ? 'border-primary-600 bg-primary-50 dark:bg-primary-900/30' : 'border-gray-300'
+            }`}>
+              5
+            </div>
+            <span className="ml-2 font-medium hidden md:inline">Revisao</span>
           </div>
         </div>
 
@@ -471,13 +533,311 @@ export function EvaluationCreatePage() {
                 Cancelar
               </Button>
               <Button onClick={handleBasicInfoNext}>
+                Proximo: Exame Neurologico
+              </Button>
+            </div>
+          </div>
+        )}
+
+        {/* Step 2: Neurological Exam */}
+        {step === 'neurological-exam' && (
+          <div className="space-y-6">
+            <Card>
+              <CardHeader
+                title="Exame Neurologico"
+                subtitle="Preencha os dados do exame neurologico do paciente"
+              />
+              <CardContent>
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                  {/* Consciencia */}
+                  <div>
+                    <label htmlFor="consciencia" className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
+                      Consciencia
+                    </label>
+                    <Input
+                      id="consciencia"
+                      name="consciencia"
+                      type="text"
+                      value={neurologicalExam.consciencia}
+                      onChange={handleNeurologicalExamChange}
+                      placeholder="Ex: Lucido e orientado"
+                    />
+                  </div>
+
+                  {/* Orientacao */}
+                  <div>
+                    <label htmlFor="orientacao" className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
+                      Orientacao
+                    </label>
+                    <Input
+                      id="orientacao"
+                      name="orientacao"
+                      type="text"
+                      value={neurologicalExam.orientacao}
+                      onChange={handleNeurologicalExamChange}
+                      placeholder="Ex: Orientado em tempo e espaco"
+                    />
+                  </div>
+
+                  {/* Atencao */}
+                  <div>
+                    <label htmlFor="atencao" className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
+                      Atencao
+                    </label>
+                    <Input
+                      id="atencao"
+                      name="atencao"
+                      type="text"
+                      value={neurologicalExam.atencao}
+                      onChange={handleNeurologicalExamChange}
+                      placeholder="Ex: Mantida"
+                    />
+                  </div>
+
+                  {/* Memoria */}
+                  <div>
+                    <label htmlFor="memoria" className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
+                      Memoria
+                    </label>
+                    <Input
+                      id="memoria"
+                      name="memoria"
+                      type="text"
+                      value={neurologicalExam.memoria}
+                      onChange={handleNeurologicalExamChange}
+                      placeholder="Ex: Preservada"
+                    />
+                  </div>
+
+                  {/* Linguagem */}
+                  <div>
+                    <label htmlFor="linguagem" className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
+                      Linguagem
+                    </label>
+                    <Input
+                      id="linguagem"
+                      name="linguagem"
+                      type="text"
+                      value={neurologicalExam.linguagem}
+                      onChange={handleNeurologicalExamChange}
+                      placeholder="Ex: Fluente, sem afasias"
+                    />
+                  </div>
+
+                  {/* Praxia */}
+                  <div>
+                    <label htmlFor="praxia" className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
+                      Praxia
+                    </label>
+                    <Input
+                      id="praxia"
+                      name="praxia"
+                      type="text"
+                      value={neurologicalExam.praxia}
+                      onChange={handleNeurologicalExamChange}
+                      placeholder="Ex: Sem apraxia"
+                    />
+                  </div>
+
+                  {/* Gnosia */}
+                  <div>
+                    <label htmlFor="gnosia" className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
+                      Gnosia
+                    </label>
+                    <Input
+                      id="gnosia"
+                      name="gnosia"
+                      type="text"
+                      value={neurologicalExam.gnosia}
+                      onChange={handleNeurologicalExamChange}
+                      placeholder="Ex: Sem agnosia"
+                    />
+                  </div>
+
+                  {/* Funcao Executiva */}
+                  <div>
+                    <label htmlFor="funcaoExecutiva" className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
+                      Funcao Executiva
+                    </label>
+                    <Input
+                      id="funcaoExecutiva"
+                      name="funcaoExecutiva"
+                      type="text"
+                      value={neurologicalExam.funcaoExecutiva}
+                      onChange={handleNeurologicalExamChange}
+                      placeholder="Ex: Preservada"
+                    />
+                  </div>
+
+                  {/* Humor */}
+                  <div>
+                    <label htmlFor="humor" className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
+                      Humor
+                    </label>
+                    <Input
+                      id="humor"
+                      name="humor"
+                      type="text"
+                      value={neurologicalExam.humor}
+                      onChange={handleNeurologicalExamChange}
+                      placeholder="Ex: Eutimico"
+                    />
+                  </div>
+
+                  {/* Comportamento */}
+                  <div>
+                    <label htmlFor="comportamento" className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
+                      Comportamento
+                    </label>
+                    <Input
+                      id="comportamento"
+                      name="comportamento"
+                      type="text"
+                      value={neurologicalExam.comportamento}
+                      onChange={handleNeurologicalExamChange}
+                      placeholder="Ex: Adequado"
+                    />
+                  </div>
+
+                  {/* Nervos Cranianos */}
+                  <div>
+                    <label htmlFor="nervosCranianos" className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
+                      Nervos Cranianos
+                    </label>
+                    <Input
+                      id="nervosCranianos"
+                      name="nervosCranianos"
+                      type="text"
+                      value={neurologicalExam.nervosCranianos}
+                      onChange={handleNeurologicalExamChange}
+                      placeholder="Ex: Sem alteracoes"
+                    />
+                  </div>
+
+                  {/* Motor */}
+                  <div>
+                    <label htmlFor="motor" className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
+                      Motor
+                    </label>
+                    <Input
+                      id="motor"
+                      name="motor"
+                      type="text"
+                      value={neurologicalExam.motor}
+                      onChange={handleNeurologicalExamChange}
+                      placeholder="Ex: Forca muscular preservada"
+                    />
+                  </div>
+
+                  {/* Sensibilidade */}
+                  <div>
+                    <label htmlFor="sensibilidade" className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
+                      Sensibilidade
+                    </label>
+                    <Input
+                      id="sensibilidade"
+                      name="sensibilidade"
+                      type="text"
+                      value={neurologicalExam.sensibilidade}
+                      onChange={handleNeurologicalExamChange}
+                      placeholder="Ex: Tatil e dolorosa preservadas"
+                    />
+                  </div>
+
+                  {/* Reflexos */}
+                  <div>
+                    <label htmlFor="reflexos" className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
+                      Reflexos
+                    </label>
+                    <Input
+                      id="reflexos"
+                      name="reflexos"
+                      type="text"
+                      value={neurologicalExam.reflexos}
+                      onChange={handleNeurologicalExamChange}
+                      placeholder="Ex: Normorreflexia"
+                    />
+                  </div>
+
+                  {/* Coordenacao */}
+                  <div>
+                    <label htmlFor="coordenacao" className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
+                      Coordenacao
+                    </label>
+                    <Input
+                      id="coordenacao"
+                      name="coordenacao"
+                      type="text"
+                      value={neurologicalExam.coordenacao}
+                      onChange={handleNeurologicalExamChange}
+                      placeholder="Ex: Preservada"
+                    />
+                  </div>
+
+                  {/* Marcha */}
+                  <div>
+                    <label htmlFor="marcha" className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
+                      Marcha
+                    </label>
+                    <Input
+                      id="marcha"
+                      name="marcha"
+                      type="text"
+                      value={neurologicalExam.marcha}
+                      onChange={handleNeurologicalExamChange}
+                      placeholder="Ex: Normal"
+                    />
+                  </div>
+
+                  {/* Sinais Meningeos */}
+                  <div>
+                    <label htmlFor="sinaisMeningeos" className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
+                      Sinais Meningeos
+                    </label>
+                    <Input
+                      id="sinaisMeningeos"
+                      name="sinaisMeningeos"
+                      type="text"
+                      value={neurologicalExam.sinaisMeningeos}
+                      onChange={handleNeurologicalExamChange}
+                      placeholder="Ex: Ausentes"
+                    />
+                  </div>
+
+                  {/* Observacoes */}
+                  <div className="md:col-span-2">
+                    <label htmlFor="observacoes" className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
+                      Observacoes
+                    </label>
+                    <textarea
+                      id="observacoes"
+                      name="observacoes"
+                      value={neurologicalExam.observacoes}
+                      onChange={handleNeurologicalExamChange}
+                      rows={4}
+                      className="w-full px-4 py-2 border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-700 text-gray-900 dark:text-gray-100 focus:ring-2 focus:ring-primary-500 focus:border-transparent"
+                      placeholder="Observacoes adicionais do exame neurologico..."
+                    />
+                  </div>
+                </div>
+              </CardContent>
+            </Card>
+
+            <div className="flex justify-between">
+              <Button
+                onClick={() => setStep('basic-info')}
+                className="bg-gray-200 text-gray-700 hover:bg-gray-300 dark:bg-gray-700 dark:text-gray-300 dark:hover:bg-gray-600"
+              >
+                Voltar
+              </Button>
+              <Button onClick={handleNeurologicalExamNext}>
                 Proximo: Selecionar Testes
               </Button>
             </div>
           </div>
         )}
 
-        {/* Step 2: Test Selection */}
+        {/* Step 3: Test Selection */}
         {step === 'test-selection' && (
           <div className="space-y-6">
             <Card>
@@ -603,7 +963,7 @@ export function EvaluationCreatePage() {
 
             <div className="flex justify-between">
               <Button
-                onClick={() => setStep('basic-info')}
+                onClick={() => setStep('neurological-exam')}
                 className="bg-gray-200 text-gray-700 hover:bg-gray-300 dark:bg-gray-700 dark:text-gray-300 dark:hover:bg-gray-600"
               >
                 Voltar
@@ -615,7 +975,7 @@ export function EvaluationCreatePage() {
           </div>
         )}
 
-        {/* Step 3a: MMSE Test */}
+        {/* Step 4a: MMSE Test */}
         {step === 'mmse-test' && (
           <MMSETest
             onComplete={handleMMSEComplete}
