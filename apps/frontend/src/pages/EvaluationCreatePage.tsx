@@ -325,13 +325,6 @@ export function EvaluationCreatePage() {
     }
   };
 
-  const getTestStepLabel = (): string => {
-    if (step === 'mmse-test') return 'MMSE';
-    if (step === 'moca-test') return 'MoCA';
-    if (step === 'clock-test') return 'Teste do Relogio';
-    return 'Testes';
-  };
-
   return (
     <Layout>
       <div className="space-y-6">
