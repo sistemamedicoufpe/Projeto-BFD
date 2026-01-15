@@ -1,6 +1,7 @@
 import { BrowserRouter, Routes, Route, Navigate } from 'react-router-dom'
 import { AuthProvider } from './contexts/AuthContext'
 import { SettingsProvider } from './contexts/SettingsContext'
+import { SidebarProvider } from './contexts/SidebarContext'
 import { ProtectedRoute } from './components/ProtectedRoute'
 
 // Pages
@@ -16,6 +17,9 @@ import { EvaluationCreatePage } from './pages/EvaluationCreatePage'
 import { EvaluationDetailPage } from './pages/EvaluationDetailPage'
 import { ReportsPage } from './pages/ReportsPage'
 import { ReportCreatePage } from './pages/ReportCreatePage'
+import { ExamsPage } from './pages/ExamsPage'
+import { ExamDetailPage } from './pages/ExamDetailPage'
+import { ExamCreatePage } from './pages/ExamCreatePage'
 import { SettingsPage } from './pages/SettingsPage'
 import { HelpPage } from './pages/HelpPage'
 
@@ -27,7 +31,8 @@ function App() {
     <BrowserRouter basename={basename}>
       <SettingsProvider>
         <AuthProvider>
-          <Routes>
+          <SidebarProvider>
+            <Routes>
           {/* Public routes */}
           <Route path="/login" element={<LoginPage />} />
           <Route path="/registro" element={<RegisterPage />} />
@@ -106,6 +111,38 @@ function App() {
             }
           />
           <Route
+            path="/exames"
+            element={
+              <ProtectedRoute>
+                <ExamsPage />
+              </ProtectedRoute>
+            }
+          />
+          <Route
+            path="/exames/novo"
+            element={
+              <ProtectedRoute>
+                <ExamCreatePage />
+              </ProtectedRoute>
+            }
+          />
+          <Route
+            path="/exames/:id"
+            element={
+              <ProtectedRoute>
+                <ExamDetailPage />
+              </ProtectedRoute>
+            }
+          />
+          <Route
+            path="/exames/:id/editar"
+            element={
+              <ProtectedRoute>
+                <ExamCreatePage />
+              </ProtectedRoute>
+            }
+          />
+          <Route
             path="/relatorios"
             element={
               <ProtectedRoute>
@@ -140,7 +177,8 @@ function App() {
 
           {/* Catch all */}
           <Route path="*" element={<Navigate to="/" replace />} />
-        </Routes>
+            </Routes>
+          </SidebarProvider>
         </AuthProvider>
       </SettingsProvider>
     </BrowserRouter>

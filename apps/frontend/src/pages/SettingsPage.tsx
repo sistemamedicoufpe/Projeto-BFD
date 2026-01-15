@@ -1,10 +1,60 @@
-import { useState, useEffect, useRef } from 'react'
+import { useState, useEffect, useRef, useCallback } from 'react'
 import { Layout } from '@/components/layout'
 import { Card, CardHeader, CardContent, Button, Input, Toggle, Select } from '@/components/ui'
 import { useAuth } from '@/contexts/AuthContext'
 import { useSettings } from '@/contexts/SettingsContext'
+import { authService } from '@/services/authService'
 
 const PROFILE_IMAGE_KEY = 'neurocare_profile_image'
+
+// Mask functions
+const maskCRM = (value: string): string => {
+  // Remove non-alphanumeric characters
+  const cleaned = value.replace(/[^0-9A-Za-z]/g, '').toUpperCase()
+
+  // Extract digits (max 6) and letters (max 2)
+  const digits = cleaned.replace(/[^0-9]/g, '').slice(0, 6)
+  const letters = cleaned.replace(/[^A-Z]/g, '').slice(0, 2)
+
+  // Format: 000000-UF
+  if (digits.length === 6 && letters.length > 0) {
+    return `${digits}-${letters}`
+  } else if (digits.length > 0) {
+    return digits
+  }
+  return ''
+}
+
+const maskTelefone = (value: string): string => {
+  // Remove non-digit characters
+  const cleaned = value.replace(/\D/g, '').slice(0, 11)
+
+  // Format: (00) 00000-0000 or (00) 0000-0000
+  if (cleaned.length === 0) return ''
+  if (cleaned.length <= 2) return `(${cleaned}`
+  if (cleaned.length <= 6) return `(${cleaned.slice(0, 2)}) ${cleaned.slice(2)}`
+  if (cleaned.length <= 10) return `(${cleaned.slice(0, 2)}) ${cleaned.slice(2, 6)}-${cleaned.slice(6)}`
+  return `(${cleaned.slice(0, 2)}) ${cleaned.slice(2, 7)}-${cleaned.slice(7)}`
+}
+
+// Validation functions
+const validateCRM = (value: string): string | undefined => {
+  if (!value) return undefined
+  const pattern = /^\d{6}-[A-Z]{2}$/
+  if (!pattern.test(value)) {
+    return 'Formato invalido. Use: 000000-UF'
+  }
+  return undefined
+}
+
+const validateTelefone = (value: string): string | undefined => {
+  if (!value) return undefined
+  const pattern = /^\(\d{2}\) \d{4,5}-\d{4}$/
+  if (!pattern.test(value)) {
+    return 'Formato invalido. Use: (00) 00000-0000'
+  }
+  return undefined
+}
 
 export function SettingsPage() {
   const { user } = useAuth()
@@ -30,7 +80,74 @@ export function SettingsPage() {
 
   const [profileImage, setProfileImage] = useState<string | null>(null)
   const [imageLoading, setImageLoading] = useState(false)
+  const [validationErrors, setValidationErrors] = useState<{
+    crm?: string
+    telefone?: string
+  }>({})
   const fileInputRef = useRef<HTMLInputElement>(null)
+
+  // Change password modal state
+  const [showPasswordModal, setShowPasswordModal] = useState(false)
+  const [passwordForm, setPasswordForm] = useState({
+    currentPassword: '',
+    newPassword: '',
+    confirmPassword: '',
+  })
+  const [passwordError, setPasswordError] = useState<string | null>(null)
+  const [passwordSuccess, setPasswordSuccess] = useState(false)
+  const [changingPassword, setChangingPassword] = useState(false)
+
+  // Handle password change
+  const handlePasswordChange = async () => {
+    setPasswordError(null)
+
+    // Validate form
+    if (!passwordForm.currentPassword) {
+      setPasswordError('Digite sua senha atual')
+      return
+    }
+    if (!passwordForm.newPassword) {
+      setPasswordError('Digite a nova senha')
+      return
+    }
+    if (passwordForm.newPassword.length < 6) {
+      setPasswordError('A nova senha deve ter pelo menos 6 caracteres')
+      return
+    }
+    if (passwordForm.newPassword !== passwordForm.confirmPassword) {
+      setPasswordError('As senhas não coincidem')
+      return
+    }
+
+    try {
+      setChangingPassword(true)
+      await authService.changePassword(passwordForm.currentPassword, passwordForm.newPassword)
+      setPasswordSuccess(true)
+      setPasswordForm({ currentPassword: '', newPassword: '', confirmPassword: '' })
+      setTimeout(() => {
+        setShowPasswordModal(false)
+        setPasswordSuccess(false)
+      }, 2000)
+    } catch (err: unknown) {
+      const errorMessage = err instanceof Error ? err.message : 'Erro ao alterar senha'
+      setPasswordError(errorMessage)
+    } finally {
+      setChangingPassword(false)
+    }
+  }
+
+  // Handlers for masked inputs
+  const handleCRMChange = useCallback((e: React.ChangeEvent<HTMLInputElement>) => {
+    const maskedValue = maskCRM(e.target.value)
+    setProfileData(prev => ({ ...prev, crm: maskedValue }))
+    setValidationErrors(prev => ({ ...prev, crm: validateCRM(maskedValue) }))
+  }, [])
+
+  const handleTelefoneChange = useCallback((e: React.ChangeEvent<HTMLInputElement>) => {
+    const maskedValue = maskTelefone(e.target.value)
+    setProfileData(prev => ({ ...prev, telefone: maskedValue }))
+    setValidationErrors(prev => ({ ...prev, telefone: validateTelefone(maskedValue) }))
+  }, [])
 
   // Carregar imagem do perfil do localStorage
   useEffect(() => {
@@ -296,14 +413,18 @@ export function SettingsPage() {
                   <Input
                     label="CRM"
                     value={profileData.crm}
-                    onChange={(e) => setProfileData(prev => ({ ...prev, crm: e.target.value }))}
+                    onChange={handleCRMChange}
                     placeholder="000000-UF"
+                    error={validationErrors.crm}
+                    helperText={!validationErrors.crm ? "Formato: 000000-UF" : undefined}
                   />
                   <Input
                     label="Telefone"
                     value={profileData.telefone}
-                    onChange={(e) => setProfileData(prev => ({ ...prev, telefone: e.target.value }))}
+                    onChange={handleTelefoneChange}
                     placeholder="(00) 00000-0000"
+                    error={validationErrors.telefone}
+                    helperText={!validationErrors.telefone ? "Formato: (00) 00000-0000" : undefined}
                   />
                 </div>
                 <Input
@@ -416,7 +537,11 @@ export function SettingsPage() {
                   <Button
                     variant="outline"
                     size="sm"
-                    onClick={() => alert('Funcionalidade em desenvolvimento')}
+                    onClick={() => {
+                      setShowPasswordModal(true)
+                      setPasswordError(null)
+                      setPasswordForm({ currentPassword: '', newPassword: '', confirmPassword: '' })
+                    }}
                   >
                     Alterar senha
                   </Button>
@@ -645,6 +770,81 @@ export function SettingsPage() {
           </CardContent>
         </Card>
       </div>
+
+      {/* Change Password Modal */}
+      {showPasswordModal && (
+        <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50">
+          <div className="bg-white dark:bg-gray-800 rounded-lg shadow-xl w-full max-w-md mx-4">
+            <div className="p-6">
+              <h2 className="text-xl font-bold text-gray-900 dark:text-gray-100 mb-4">
+                Alterar Senha
+              </h2>
+
+              {passwordSuccess ? (
+                <div className="text-center py-8">
+                  <div className="w-16 h-16 bg-green-100 dark:bg-green-900/30 rounded-full flex items-center justify-center mx-auto mb-4">
+                    <svg className="w-8 h-8 text-green-600 dark:text-green-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
+                    </svg>
+                  </div>
+                  <p className="text-green-600 dark:text-green-400 font-medium">Senha alterada com sucesso!</p>
+                </div>
+              ) : (
+                <div className="space-y-4">
+                  {passwordError && (
+                    <div className="bg-red-50 dark:bg-red-900/30 border border-red-200 dark:border-red-800 text-red-700 dark:text-red-300 px-4 py-3 rounded-lg text-sm">
+                      {passwordError}
+                    </div>
+                  )}
+
+                  <Input
+                    label="Senha atual"
+                    type="password"
+                    value={passwordForm.currentPassword}
+                    onChange={(e) => setPasswordForm(prev => ({ ...prev, currentPassword: e.target.value }))}
+                    placeholder="Digite sua senha atual"
+                  />
+
+                  <Input
+                    label="Nova senha"
+                    type="password"
+                    value={passwordForm.newPassword}
+                    onChange={(e) => setPasswordForm(prev => ({ ...prev, newPassword: e.target.value }))}
+                    placeholder="Digite a nova senha"
+                    helperText="Minimo 6 caracteres"
+                  />
+
+                  <Input
+                    label="Confirmar nova senha"
+                    type="password"
+                    value={passwordForm.confirmPassword}
+                    onChange={(e) => setPasswordForm(prev => ({ ...prev, confirmPassword: e.target.value }))}
+                    placeholder="Confirme a nova senha"
+                  />
+
+                  <div className="flex gap-3 pt-4">
+                    <Button
+                      variant="outline"
+                      className="flex-1"
+                      onClick={() => setShowPasswordModal(false)}
+                      disabled={changingPassword}
+                    >
+                      Cancelar
+                    </Button>
+                    <Button
+                      className="flex-1"
+                      onClick={handlePasswordChange}
+                      disabled={changingPassword}
+                    >
+                      {changingPassword ? 'Alterando...' : 'Alterar Senha'}
+                    </Button>
+                  </div>
+                </div>
+              )}
+            </div>
+          </div>
+        </div>
+      )}
     </Layout>
   )
 }

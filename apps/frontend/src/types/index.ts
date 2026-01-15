@@ -91,7 +91,11 @@ export interface BaseExam {
   patientId: string
   tipo: ExamType
   data: string
+  dataRealizacao: string // Alias para compatibilidade
   medico?: string
+  descricao?: string // Propriedade genérica para descrição
+  resultado?: string // Propriedade genérica para resultado
+  dados?: Record<string, any> // Dados específicos do tipo de exame
   observacoes?: string
   createdAt: Date
   updatedAt: Date
@@ -201,6 +205,31 @@ export interface Evaluation {
   retorno?: string
   exameSolicitados?: string[]
   observacoes?: string
+  // Resultados de testes cognitivos
+  mmseResult?: {
+    totalScore: number
+    orientation?: number
+    registration?: number
+    attention?: number
+    recall?: number
+    language?: number
+  }
+  mocaResult?: {
+    totalScore: number
+    visuospatial?: number
+    naming?: number
+    attention?: number
+    language?: number
+    abstraction?: number
+    memory?: number
+    orientation?: number
+  }
+  clockDrawingResult?: {
+    totalScore: number
+    clockFace?: number
+    numbers?: number
+    hands?: number
+  }
   createdAt: Date
   updatedAt: Date
   _synced: boolean

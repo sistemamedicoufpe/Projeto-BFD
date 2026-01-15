@@ -195,6 +195,8 @@ export function MMSETest({ onComplete, onCancel }: MMSETestProps) {
   const question = MMSE_QUESTIONS[currentQuestion];
 
   const handleScore = (score: number) => {
+    // Guard against undefined question
+    if (!question) return;
     const newScores = { ...scores, [question.id]: score };
     setScores(newScores);
 
@@ -264,6 +266,12 @@ export function MMSETest({ onComplete, onCancel }: MMSETestProps) {
     setShowSummary(false);
     setCurrentQuestion(0);
   };
+
+  // Guard against undefined question (can happen during transition)
+  if (!question && !showSummary) {
+    setShowSummary(true);
+    return null;
+  }
 
   if (showSummary) {
     const results = calculateResults();
@@ -367,6 +375,18 @@ export function MMSETest({ onComplete, onCancel }: MMSETestProps) {
             </div>
           </CardContent>
         </Card>
+      </div>
+    );
+  }
+
+  // Guard: if question is undefined, return loading state
+  if (!question) {
+    return (
+      <div className="flex items-center justify-center py-12">
+        <div className="text-center">
+          <div className="inline-block animate-spin rounded-full h-8 w-8 border-b-2 border-primary-600"></div>
+          <p className="mt-2 text-gray-600">Carregando...</p>
+        </div>
       </div>
     );
   }

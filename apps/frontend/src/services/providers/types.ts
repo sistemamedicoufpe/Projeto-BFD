@@ -30,6 +30,12 @@ export interface ProviderPatient {
   _synced: boolean
 }
 
+// Export aliases for consistency with ProviderPatient naming convention
+export type ProviderEvaluation = Evaluation
+export type ProviderExam = Exam
+export type ProviderReport = Report
+export type ProviderUser = User
+
 // ============================================
 // BASE PROVIDER INTERFACE
 // ============================================

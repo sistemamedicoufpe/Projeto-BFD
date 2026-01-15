@@ -6,6 +6,7 @@ import { MMSETest, MoCATest, ClockDrawingTest } from '@/components/evaluations';
 import { getEvaluationsProvider, getPatientsProvider } from '@/services/providers/factory/provider-factory';
 import type { IEvaluationsProvider, IPatientsProvider, ProviderPatient } from '@/services/providers/types';
 import { validateForm } from '@/utils/validation';
+import { useAuth } from '@/contexts/AuthContext';
 
 type Step = 'basic-info' | 'test-selection' | 'mmse-test' | 'moca-test' | 'clock-test' | 'review';
 
@@ -67,6 +68,7 @@ interface SelectedTests {
 
 export function EvaluationCreatePage() {
   const navigate = useNavigate();
+  const { user } = useAuth();
   const [step, setStep] = useState<Step>('basic-info');
   const [patients, setPatients] = useState<ProviderPatient[]>([]);
   const [loadingPatients, setLoadingPatients] = useState(true);
@@ -225,7 +227,7 @@ export function EvaluationCreatePage() {
       const evaluationData = {
         patientId: basicInfo.patientId,
         data: basicInfo.dataAvaliacao,
-        medico: 'Dr. Usuario', // TODO: Get from auth context
+        medico: user?.nome ? `Dr(a). ${user.nome}` : 'Medico nao identificado',
         queixaPrincipal: basicInfo.queixaPrincipal,
         historiaDoenca: basicInfo.historicoDoencaAtual || '',
         exameNeurologico: {},

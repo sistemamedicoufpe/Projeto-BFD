@@ -171,6 +171,30 @@ class AuthService {
   }
 
   /**
+   * Altera a senha do usuário
+   */
+  async changePassword(currentPassword: string, newPassword: string): Promise<void> {
+    const currentUser = this.getCurrentUser()
+    if (!currentUser) {
+      throw new Error('Usuário não autenticado')
+    }
+
+    // Verifica senha atual
+    const storedPassword = await storageService.getItem<string>(`password_${currentUser.id}`)
+    if (storedPassword !== currentPassword) {
+      throw new Error('Senha atual incorreta')
+    }
+
+    // Valida nova senha
+    if (newPassword.length < 6) {
+      throw new Error('A nova senha deve ter pelo menos 6 caracteres')
+    }
+
+    // Salva nova senha
+    await storageService.setItem(`password_${currentUser.id}`, newPassword)
+  }
+
+  /**
    * Atualiza dados do usuário
    */
   async updateUser(updates: Partial<User>): Promise<User> {
