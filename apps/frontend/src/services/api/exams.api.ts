@@ -4,7 +4,7 @@ import type { Exam } from '@neurocare/shared-types';
 /**
  * DTO para criar exame
  */
-export interface CreateExamDto {
+export interface CreateExamDTO {
   evaluationId: string;
   tipo: 'RESSONANCIA' | 'TOMOGRAFIA' | 'ELETROENCEFALOGRAMA' | 'PET_SCAN' | 'OUTRO';
   titulo: string;
@@ -19,7 +19,7 @@ export interface CreateExamDto {
 /**
  * DTO para atualizar exame
  */
-export type UpdateExamDto = Partial<CreateExamDto>;
+export type UpdateExamDTO = Partial<CreateExamDTO>;
 
 /**
  * Estatísticas de exames
@@ -76,7 +76,7 @@ export const examsApi = {
   /**
    * Criar novo exame
    */
-  async create(data: CreateExamDto): Promise<Exam> {
+  async create(data: CreateExamDTO): Promise<Exam> {
     const response = await api.post<Exam>('/exams', data);
     return response.data;
   },
@@ -84,7 +84,7 @@ export const examsApi = {
   /**
    * Atualizar exame
    */
-  async update(id: string, data: UpdateExamDto): Promise<Exam> {
+  async update(id: string, data: UpdateExamDTO): Promise<Exam> {
     const response = await api.patch<Exam>(`/exams/${id}`, data);
     return response.data;
   },

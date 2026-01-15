@@ -205,22 +205,16 @@ export function ExamsPage() {
         ) : (
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
             {filteredExams.map((exam) => (
-              <Card
+              <div
                 key={exam.id}
                 className="cursor-pointer hover:shadow-lg transition-shadow"
                 onClick={() => navigate(`/exames/${exam.id}`)}
               >
-                <CardHeader
-                  title={
-                    <div className="flex items-center gap-2">
-                      <span role="img" aria-hidden="true">
-                        {examTypeIcons[exam.tipo]}
-                      </span>
-                      <span>{examTypeLabels[exam.tipo]}</span>
-                    </div>
-                  }
-                  subtitle={formatDate(exam.dataRealizacao)}
-                />
+                <Card>
+                  <CardHeader
+                    title={`${examTypeIcons[exam.tipo]} ${examTypeLabels[exam.tipo]}`}
+                    subtitle={formatDate(exam.dataRealizacao)}
+                  />
                 <CardContent>
                   <div className="space-y-2">
                     {exam.descricao && (
@@ -241,6 +235,7 @@ export function ExamsPage() {
                   </div>
                 </CardContent>
               </Card>
+              </div>
             ))}
           </div>
         )}

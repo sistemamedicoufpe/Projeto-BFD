@@ -2,8 +2,7 @@ import { useState, useEffect, useCallback, useRef } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { Card, CardHeader, CardContent, Button, Input, Select } from '@/components/ui'
 import { getPatientsProvider, getEvaluationsProvider, getReportsProvider } from '@/services/providers/factory/provider-factory'
-import type { IPatientsProvider, IEvaluationsProvider, IReportsProvider } from '@/services/providers/types'
-import type { Patient, Evaluation } from '@/types'
+import type { IPatientsProvider, IEvaluationsProvider, IReportsProvider, ProviderPatient, ProviderEvaluation } from '@/services/providers/types'
 import { useAuth } from '@/contexts/AuthContext'
 import { validateForm } from '@/utils/validation'
 import { useLocalAI } from '@/hooks/useLocalAI'
@@ -29,9 +28,9 @@ export function ReportForm() {
   const { user } = useAuth()
   const { isReady, analyze } = useLocalAI()
   const { settings } = useSettings()
-  const [patients, setPatients] = useState<Patient[]>([])
-  const [evaluations, setEvaluations] = useState<Evaluation[]>([])
-  const [filteredEvaluations, setFilteredEvaluations] = useState<Evaluation[]>([])
+  const [patients, setPatients] = useState<ProviderPatient[]>([])
+  const [evaluations, setEvaluations] = useState<ProviderEvaluation[]>([])
+  const [filteredEvaluations, setFilteredEvaluations] = useState<ProviderEvaluation[]>([])
   const [loading, setLoading] = useState(true)
   const [saving, setSaving] = useState(false)
   const [error, setError] = useState<string | null>(null)
@@ -110,7 +109,7 @@ export function ReportForm() {
   }
 
   // Prepara input de IA de uma avaliação
-  const prepareAIInput = (evaluation: Evaluation): DiagnosisInput => {
+  const prepareAIInput = (evaluation: ProviderEvaluation): DiagnosisInput => {
     const patient = patients.find(p => p.id === evaluation.patientId)
     const input: DiagnosisInput = {
       idade: patient?.idade,
@@ -258,15 +257,29 @@ export function ReportForm() {
         ? evaluations.filter(e => e.id === formData.evaluationId)
         : evaluations.filter(e => e.patientId === formData.patientId)
 
+      // Map ProviderPatient to Patient format for Report
+      const patientForReport = selectedPatient ? {
+        ...selectedPatient,
+        sexo: (selectedPatient.genero === 'Masculino' ? 'M' : selectedPatient.genero === 'Feminino' ? 'F' : 'Outro') as 'M' | 'F' | 'Outro',
+        endereco: selectedPatient.enderecoCompleto ? {
+          rua: selectedPatient.enderecoCompleto,
+          cep: selectedPatient.cep,
+          cidade: selectedPatient.cidade,
+          estado: selectedPatient.estado,
+        } : undefined,
+        historicoMedico: {
+          medicamentos: selectedPatient.medicamentosEmUso,
+          alergias: selectedPatient.alergias,
+          historicoFamiliar: selectedPatient.historicoMedico,
+        },
+      } : undefined
+
       const reportData = {
         patientId: formData.patientId,
         tipo: formData.tipo,
         data: new Date().toISOString(),
-        titulo: `Relatório ${formData.tipo} - ${selectedPatient?.nome}`,
-        descricao: formData.conclusao || `Relatório ${formData.tipo.toLowerCase()} do paciente`,
-        status: 'PENDENTE' as const,
         conteudo: {
-          paciente: selectedPatient!,
+          paciente: patientForReport!,
           avaliacoes: selectedEvaluations,
           exames: [],
           diagnostico: formData.diagnosticoPrincipal ? {
@@ -358,7 +371,7 @@ export function ReportForm() {
                   { value: '', label: 'Todas as avaliações do paciente' },
                   ...filteredEvaluations.map(e => ({
                     value: e.id,
-                    label: `${new Date(e.dataAvaliacao).toLocaleDateString('pt-BR')} - ${e.queixaPrincipal?.substring(0, 50) || 'Sem queixa'}`
+                    label: `${new Date(e.data).toLocaleDateString('pt-BR')} - ${e.queixaPrincipal?.substring(0, 50) || 'Sem queixa'}`
                   }))
                 ]}
               />
@@ -367,9 +380,8 @@ export function ReportForm() {
             {selectedEvaluation && (
               <div className="bg-green-50 dark:bg-green-900/30 p-4 rounded-lg">
                 <p className="text-sm text-green-900 dark:text-green-200">
-                  <strong>Data:</strong> {new Date(selectedEvaluation.dataAvaliacao).toLocaleDateString('pt-BR')}<br />
-                  <strong>Queixa:</strong> {selectedEvaluation.queixaPrincipal}<br />
-                  <strong>Status:</strong> {selectedEvaluation.status}
+                  <strong>Data:</strong> {new Date(selectedEvaluation.data).toLocaleDateString('pt-BR')}<br />
+                  <strong>Queixa:</strong> {selectedEvaluation.queixaPrincipal}
                 </p>
               </div>
             )}

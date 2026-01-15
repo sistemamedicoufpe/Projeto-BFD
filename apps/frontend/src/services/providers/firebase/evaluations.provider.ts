@@ -30,7 +30,7 @@ export class FirebaseEvaluationsProvider implements IEvaluationsProvider {
 
   private toFirestoreData(evaluation: Partial<Evaluation>): Record<string, unknown> {
     const data = { ...evaluation }
-    const encrypted = encryptObject(data, ENCRYPTED_FIELDS)
+    const encrypted = encryptObject(data, ENCRYPTED_FIELDS) as Record<string, unknown>
 
     if (data.createdAt instanceof Date) {
       encrypted.createdAt = Timestamp.fromDate(data.createdAt)

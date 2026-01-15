@@ -30,7 +30,7 @@ export class FirebaseReportsProvider implements IReportsProvider {
 
   private toFirestoreData(report: Partial<Report>): Record<string, unknown> {
     const data = { ...report }
-    const encrypted = encryptObject(data, ENCRYPTED_FIELDS)
+    const encrypted = encryptObject(data, ENCRYPTED_FIELDS) as Record<string, unknown>
 
     if (data.createdAt instanceof Date) {
       encrypted.createdAt = Timestamp.fromDate(data.createdAt)

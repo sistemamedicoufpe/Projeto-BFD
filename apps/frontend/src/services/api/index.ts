@@ -10,7 +10,7 @@ export { evaluationsApi } from './evaluations.api';
 export { examsApi } from './exams.api';
 export { reportsApi } from './reports.api';
 
-export type { CreatePatientDto, UpdatePatientDto } from './patients.api';
-export type { CreateEvaluationDto, UpdateEvaluationDto, EvaluationStats } from './evaluations.api';
-export type { CreateExamDto, UpdateExamDto, ExamStats } from './exams.api';
-export type { CreateReportDto, UpdateReportDto, ReportStats } from './reports.api';
+export type { CreatePatientDTO, UpdatePatientDTO } from './patients.api';
+export type { CreateEvaluationDTO, UpdateEvaluationDTO, EvaluationStats } from './evaluations.api';
+export type { CreateExamDTO, UpdateExamDTO, ExamStats } from './exams.api';
+export type { CreateReportDTO, UpdateReportDTO, ReportStats } from './reports.api';

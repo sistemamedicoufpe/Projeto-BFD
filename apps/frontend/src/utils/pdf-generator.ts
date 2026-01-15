@@ -1,5 +1,5 @@
 import jsPDF from 'jspdf';
-import type { Patient, Evaluation, Report } from '@neurocare/shared-types';
+import type { Patient, Evaluation, Report } from '@/types';
 
 interface MMSEResult {
   totalScore: number;
@@ -144,13 +144,15 @@ export class PDFReportGenerator {
     this.addSectionTitle('Informações do Paciente');
 
     this.addField('Nome', patient.nome);
-    this.addField('CPF', patient.cpf);
+    if (patient.cpf) {
+      this.addField('CPF', patient.cpf);
+    }
     this.addField('Data de Nascimento', new Date(patient.dataNascimento).toLocaleDateString('pt-BR'));
     this.addField('Idade', `${patient.idade} anos`);
-    this.addField('Gênero', this.formatGender(patient.genero));
+    this.addField('Gênero', this.formatGender(patient.sexo));
 
-    if (patient.telefone || patient.celular) {
-      this.addField('Contato', patient.telefone || patient.celular || '');
+    if (patient.telefone) {
+      this.addField('Contato', patient.telefone);
     }
 
     this.currentY += 5;
@@ -162,23 +164,19 @@ export class PDFReportGenerator {
   private addEvaluationInfo(evaluation: Evaluation) {
     this.addSectionTitle('Dados da Avaliação');
 
-    this.addField('Data da Avaliação', new Date(evaluation.dataAvaliacao).toLocaleDateString('pt-BR'));
-    this.addField('Status', this.formatStatus(evaluation.status));
+    this.addField('Data da Avaliação', new Date(evaluation.data).toLocaleDateString('pt-BR'));
 
     if (evaluation.queixaPrincipal) {
       this.addField('Queixa Principal', evaluation.queixaPrincipal);
     }
 
-    if (evaluation.historicoDoencaAtual) {
-      this.addField('História da Doença Atual', evaluation.historicoDoencaAtual);
+    if (evaluation.historiaDoenca) {
+      this.addField('História da Doença Atual', evaluation.historiaDoenca);
     }
 
-    if (evaluation.hipoteseDiagnostica) {
-      this.addField('Hipótese Diagnóstica', evaluation.hipoteseDiagnostica, true);
-    }
-
-    if (evaluation.cid10) {
-      this.addField('CID-10', evaluation.cid10);
+    if (evaluation.hipoteseDiagnostica && evaluation.hipoteseDiagnostica.length > 0) {
+      const diagnosticos = evaluation.hipoteseDiagnostica.map(h => h.diagnostico).join(', ');
+      this.addField('Hipótese Diagnóstica', diagnosticos, true);
     }
 
     this.currentY += 5;
@@ -363,30 +361,39 @@ export class PDFReportGenerator {
    * Add report content
    */
   private addReportContent(report: Report) {
-    if (report.content) {
-      if (report.content.introducao) {
-        this.addSectionTitle('Introdução');
-        this.addMultiLineText(report.content.introducao);
+    if (report.conteudo) {
+      if (report.conteudo.diagnostico) {
+        this.addSectionTitle('Diagnóstico');
+        this.addField('Principal', report.conteudo.diagnostico.principal);
+        if (report.conteudo.diagnostico.secundarios?.length) {
+          this.addField('Secundários', report.conteudo.diagnostico.secundarios.join(', '));
+        }
+        if (report.conteudo.diagnostico.cid10?.length) {
+          this.addField('CID-10', report.conteudo.diagnostico.cid10.join(', '));
+        }
       }
 
-      if (report.content.anamnese) {
-        this.addSectionTitle('Anamnese');
-        this.addMultiLineText(report.content.anamnese);
+      if (report.conteudo.prognostico) {
+        this.addSectionTitle('Prognóstico');
+        this.addMultiLineText(report.conteudo.prognostico);
       }
 
-      if (report.content.exameFisico) {
-        this.addSectionTitle('Exame Físico');
-        this.addMultiLineText(report.content.exameFisico);
+      if (report.conteudo.tratamento) {
+        this.addSectionTitle('Tratamento');
+        if (report.conteudo.tratamento.medicamentoso) {
+          this.addField('Medicamentoso', report.conteudo.tratamento.medicamentoso);
+        }
+        if (report.conteudo.tratamento.naoMedicamentoso) {
+          this.addField('Não Medicamentoso', report.conteudo.tratamento.naoMedicamentoso);
+        }
+        if (report.conteudo.tratamento.acompanhamento) {
+          this.addField('Acompanhamento', report.conteudo.tratamento.acompanhamento);
+        }
       }
 
-      if (report.content.conclusao) {
+      if (report.conteudo.conclusao) {
         this.addSectionTitle('Conclusão');
-        this.addMultiLineText(report.content.conclusao);
-      }
-
-      if (report.content.conduta) {
-        this.addSectionTitle('Conduta');
-        this.addMultiLineText(report.content.conduta);
+        this.addMultiLineText(report.conteudo.conclusao);
       }
     }
   }
@@ -430,18 +437,6 @@ export class PDFReportGenerator {
       PREFER_NOT_TO_SAY: 'Prefere não dizer',
     };
     return genderMap[gender] || gender;
-  }
-
-  /**
-   * Helper: format status
-   */
-  private formatStatus(status: string): string {
-    const statusMap: Record<string, string> = {
-      IN_PROGRESS: 'Em Andamento',
-      COMPLETED: 'Concluída',
-      CANCELLED: 'Cancelada',
-    };
-    return statusMap[status] || status;
   }
 
   /**

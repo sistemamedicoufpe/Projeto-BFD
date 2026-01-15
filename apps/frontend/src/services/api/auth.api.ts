@@ -1,12 +1,12 @@
 import { api, apiClient } from './api-client';
 import type {
-  LoginDto,
-  RegisterDto,
+  LoginCredentials,
+  CreateUserDTO,
   AuthResponse,
   User,
-  RefreshTokenDto,
-  Enable2FAResponse,
-  Verify2FADto,
+  RefreshTokenDTO,
+  TwoFactorSetupResponse,
+  TwoFactorVerifyDTO,
 } from '@neurocare/shared-types';
 
 /**
@@ -16,7 +16,7 @@ export const authApi = {
   /**
    * Registrar novo usuário
    */
-  async register(data: RegisterDto): Promise<AuthResponse> {
+  async register(data: CreateUserDTO): Promise<AuthResponse> {
     const response = await api.post<AuthResponse>('/auth/register', data);
 
     // Salva tokens
@@ -30,7 +30,7 @@ export const authApi = {
   /**
    * Login
    */
-  async login(data: LoginDto): Promise<AuthResponse> {
+  async login(data: LoginCredentials): Promise<AuthResponse> {
     const response = await api.post<AuthResponse>('/auth/login', data);
 
     // Salva tokens
@@ -51,7 +51,7 @@ export const authApi = {
   /**
    * Refresh token
    */
-  async refresh(data: RefreshTokenDto): Promise<AuthResponse> {
+  async refresh(data: RefreshTokenDTO): Promise<AuthResponse> {
     const response = await api.post<AuthResponse>('/auth/refresh', data);
 
     // Atualiza tokens
@@ -81,15 +81,15 @@ export const authApi = {
   /**
    * Ativar 2FA (retorna QR code)
    */
-  async enable2FA(): Promise<Enable2FAResponse> {
-    const response = await api.post<Enable2FAResponse>('/auth/2fa/enable');
+  async enable2FA(): Promise<TwoFactorSetupResponse> {
+    const response = await api.post<TwoFactorSetupResponse>('/auth/2fa/enable');
     return response.data;
   },
 
   /**
    * Verificar código 2FA
    */
-  async verify2FA(data: Verify2FADto): Promise<{ success: boolean }> {
+  async verify2FA(data: TwoFactorVerifyDTO): Promise<{ success: boolean }> {
     const response = await api.post<{ success: boolean }>('/auth/2fa/verify', data);
     return response.data;
   },

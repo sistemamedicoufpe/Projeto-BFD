@@ -3,15 +3,13 @@ import { useNavigate } from 'react-router-dom';
 import { Layout } from '@/components/layout';
 import { Card, CardHeader, CardContent, Button, Input } from '@/components/ui';
 import { getReportsProvider } from '@/services/providers/factory/provider-factory';
-import type { IReportsProvider } from '@/services/providers/types';
-import type { Report } from '@neurocare/shared-types';
+import type { IReportsProvider, ProviderReport } from '@/services/providers/types';
 
 export function ReportsPage() {
   const navigate = useNavigate();
-  const [reports, setReports] = useState<Report[]>([]);
+  const [reports, setReports] = useState<ProviderReport[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
-  const [filterStatus, setFilterStatus] = useState<string>('all');
   const [searchQuery, setSearchQuery] = useState('');
   const [deleting, setDeleting] = useState<string | null>(null);
   const providerRef = useRef<IReportsProvider | null>(null);
@@ -66,33 +64,14 @@ export function ReportsPage() {
     return date.toLocaleDateString('pt-BR');
   };
 
-  const getStatusBadge = (status: string) => {
-    const statusMap: Record<string, { label: string; className: string }> = {
-      PENDENTE: { label: 'Pendente', className: 'bg-yellow-100 text-yellow-800' },
-      EM_REVISAO: { label: 'Em Revisão', className: 'bg-blue-100 text-blue-800' },
-      CONCLUIDO: { label: 'Concluído', className: 'bg-green-100 text-green-800' },
-      ASSINADO: { label: 'Assinado', className: 'bg-purple-100 text-purple-800' },
-    };
-    const config = statusMap[status] || { label: status, className: 'bg-gray-100 text-gray-800' };
-    return (
-      <span className={`px-2 py-1 text-xs font-medium rounded-full ${config.className}`}>
-        {config.label}
-      </span>
-    );
-  };
-
   const filteredReports = reports.filter((report) => {
-    // Filtro por status
-    if (filterStatus !== 'all' && report.status !== filterStatus) {
-      return false;
-    }
-
     // Filtro por busca
     if (searchQuery) {
       const query = searchQuery.toLowerCase();
-      const titulo = report.titulo?.toLowerCase() || '';
-      const descricao = report.descricao?.toLowerCase() || '';
-      return titulo.includes(query) || descricao.includes(query);
+      const tipo = report.tipo?.toLowerCase() || '';
+      const paciente = report.conteudo?.paciente?.nome?.toLowerCase() || '';
+      const diagnostico = report.conteudo?.diagnostico?.principal?.toLowerCase() || '';
+      return tipo.includes(query) || paciente.includes(query) || diagnostico.includes(query);
     }
 
     return true;
@@ -126,62 +105,9 @@ export function ReportsPage() {
 
         {/* Filtros */}
         <div className="flex gap-4">
-          <div className="flex gap-2">
-            <button
-              onClick={() => setFilterStatus('all')}
-              className={`px-4 py-2 rounded-lg text-sm font-medium ${
-                filterStatus === 'all'
-                  ? 'bg-primary-600 text-white'
-                  : 'bg-gray-100 text-gray-700 hover:bg-gray-200'
-              }`}
-            >
-              Todos
-            </button>
-            <button
-              onClick={() => setFilterStatus('PENDENTE')}
-              className={`px-4 py-2 rounded-lg text-sm font-medium ${
-                filterStatus === 'PENDENTE'
-                  ? 'bg-primary-600 text-white'
-                  : 'bg-gray-100 text-gray-700 hover:bg-gray-200'
-              }`}
-            >
-              Pendentes
-            </button>
-            <button
-              onClick={() => setFilterStatus('EM_REVISAO')}
-              className={`px-4 py-2 rounded-lg text-sm font-medium ${
-                filterStatus === 'EM_REVISAO'
-                  ? 'bg-primary-600 text-white'
-                  : 'bg-gray-100 text-gray-700 hover:bg-gray-200'
-              }`}
-            >
-              Em Revisão
-            </button>
-            <button
-              onClick={() => setFilterStatus('CONCLUIDO')}
-              className={`px-4 py-2 rounded-lg text-sm font-medium ${
-                filterStatus === 'CONCLUIDO'
-                  ? 'bg-primary-600 text-white'
-                  : 'bg-gray-100 text-gray-700 hover:bg-gray-200'
-              }`}
-            >
-              Concluídos
-            </button>
-            <button
-              onClick={() => setFilterStatus('ASSINADO')}
-              className={`px-4 py-2 rounded-lg text-sm font-medium ${
-                filterStatus === 'ASSINADO'
-                  ? 'bg-primary-600 text-white'
-                  : 'bg-gray-100 text-gray-700 hover:bg-gray-200'
-              }`}
-            >
-              Assinados
-            </button>
-          </div>
-
           <Input
             type="search"
-            placeholder="Buscar por título ou descrição..."
+            placeholder="Buscar por tipo, paciente ou diagnóstico..."
             value={searchQuery}
             onChange={(e) => setSearchQuery(e.target.value)}
             className="flex-1 max-w-md"
@@ -202,10 +128,10 @@ export function ReportsPage() {
             ) : filteredReports.length === 0 ? (
               <div className="text-center py-12 text-gray-500">
                 <p className="text-5xl mb-4">📄</p>
-                {searchQuery || filterStatus !== 'all' ? (
+                {searchQuery ? (
                   <>
                     <p className="text-lg font-medium">Nenhum relatório encontrado</p>
-                    <p className="mt-2">Tente ajustar os filtros</p>
+                    <p className="mt-2">Tente ajustar a busca</p>
                   </>
                 ) : (
                   <>
@@ -220,16 +146,16 @@ export function ReportsPage() {
                   <thead className="bg-gray-50">
                     <tr>
                       <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                        Título
+                        Tipo
                       </th>
                       <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                        Data de Criação
+                        Paciente
                       </th>
                       <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                        Descrição
+                        Data
                       </th>
                       <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                        Status
+                        Diagnóstico
                       </th>
                       <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
                         Ações
@@ -241,21 +167,23 @@ export function ReportsPage() {
                       <tr key={report.id} className="hover:bg-gray-50">
                         <td className="px-6 py-4 whitespace-nowrap">
                           <div className="text-sm font-medium text-gray-900">
-                            {report.titulo || 'Sem título'}
+                            {report.tipo}
                           </div>
                         </td>
                         <td className="px-6 py-4 whitespace-nowrap">
                           <div className="text-sm text-gray-600">
-                            {formatDate(report.createdAt)}
+                            {report.conteudo?.paciente?.nome || '-'}
+                          </div>
+                        </td>
+                        <td className="px-6 py-4 whitespace-nowrap">
+                          <div className="text-sm text-gray-600">
+                            {formatDate(report.createdAt.toString())}
                           </div>
                         </td>
                         <td className="px-6 py-4">
                           <div className="text-sm text-gray-600 max-w-xs truncate">
-                            {report.descricao || '-'}
+                            {report.conteudo?.diagnostico?.principal || '-'}
                           </div>
-                        </td>
-                        <td className="px-6 py-4 whitespace-nowrap">
-                          {getStatusBadge(report.status)}
                         </td>
                         <td className="px-6 py-4 whitespace-nowrap text-sm font-medium">
                           <button className="text-primary-600 hover:text-primary-900 mr-3">
