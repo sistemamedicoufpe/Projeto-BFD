@@ -4,20 +4,7 @@ import { Layout } from '@/components/layout';
 import { Card, CardHeader, CardContent, Button, Input, ConfirmModal, AlertModal } from '@/components/ui';
 import { getPatientsProvider } from '@/services/providers/factory/provider-factory';
 import type { IPatientsProvider, ProviderPatient } from '@/services/providers/types';
-
-const translateGender = (gender: string): string => {
-  const translations: Record<string, string> = {
-    MALE: 'Masculino',
-    FEMALE: 'Feminino',
-    OTHER: 'Outro',
-    male: 'Masculino',
-    female: 'Feminino',
-    other: 'Outro',
-    M: 'Masculino',
-    F: 'Feminino',
-  };
-  return translations[gender] || gender;
-};
+import { formatGender } from '@/utils/formatters';
 
 export function PatientsPage() {
   const navigate = useNavigate();
@@ -222,7 +209,7 @@ export function PatientsPage() {
                         </td>
                         <td className="px-6 py-4 whitespace-nowrap">
                           <div className="text-sm text-gray-600 dark:text-gray-400">
-                            {translateGender(patient.genero)}
+                            {formatGender(patient.genero)}
                           </div>
                         </td>
                         <td className="px-6 py-4 whitespace-nowrap text-sm font-medium">

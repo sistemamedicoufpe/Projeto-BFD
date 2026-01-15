@@ -7,6 +7,7 @@ import { ExamAICorrelation } from '@/components/evaluations'
 import { getExamsProvider, getPatientsProvider, getEvaluationsProvider } from '@/services/providers/factory/provider-factory'
 import type { IExamsProvider, IPatientsProvider, IEvaluationsProvider, ProviderExam, ProviderPatient, ProviderEvaluation } from '@/services/providers/types'
 import { ExamType } from '@/types'
+import { formatGender } from '@/utils/formatters'
 
 const examTypeLabels: Record<ExamType, string> = {
   EEG: 'Eletroencefalograma (EEG)',
@@ -202,7 +203,7 @@ export function ExamDetailPage() {
                     {patient.nome}
                   </p>
                   <p className="text-sm text-gray-600 dark:text-gray-400">
-                    {patient.idade} anos • {patient.genero}
+                    {patient.idade} anos • {formatGender(patient.genero)}
                   </p>
                 </div>
                 <Button variant="outline" size="sm" onClick={() => navigate(`/pacientes/${patient.id}`)}>

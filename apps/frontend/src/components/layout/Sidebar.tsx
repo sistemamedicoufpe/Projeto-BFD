@@ -2,6 +2,7 @@ import { NavLink } from 'react-router-dom'
 import { useEffect, useState } from 'react'
 import { useAuth } from '@/contexts/AuthContext'
 import { useSidebar } from '@/contexts/SidebarContext'
+import { Logo } from '../ui/Logo'
 
 const PROFILE_IMAGE_KEY = 'neurocare_profile_image'
 
@@ -76,14 +77,12 @@ export function Sidebar() {
       {/* Header */}
       <div className="h-16 flex items-center justify-between px-4 border-b border-gray-200 dark:border-gray-700">
         <div className="flex items-center gap-2">
-          <span className="text-2xl" role="img" aria-label="Cérebro">
-            🧠
-          </span>
+          <Logo size="sm" />
           <span className="font-bold text-lg text-gray-900 dark:text-gray-100">NeuroDiag</span>
         </div>
         <button
           onClick={toggleSidebar}
-          className="p-2 hover:bg-gray-100 dark:hover:bg-gray-700 rounded-lg transition-colors focus:outline-none focus:ring-2 focus:ring-primary-500"
+          className="p-2 hover:bg-gray-100 dark:hover:bg-gray-700 rounded-lg transition-colors focus:outline-none focus:ring-2 focus:ring-primary-500 md:block hidden"
           aria-label={isOpen ? 'Fechar menu' : 'Abrir menu'}
           aria-expanded={isOpen}
           tabIndex={0}

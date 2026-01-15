@@ -19,42 +19,7 @@ import type {
   ProviderEvaluation,
   ProviderExam
 } from '@/services/providers/types'
-
-const translateGender = (gender: string): string => {
-  const translations: Record<string, string> = {
-    MALE: 'Masculino',
-    FEMALE: 'Feminino',
-    OTHER: 'Outro',
-    male: 'Masculino',
-    female: 'Feminino',
-    other: 'Outro',
-    M: 'Masculino',
-    F: 'Feminino',
-  }
-  return translations[gender] || gender
-}
-
-const formatDate = (dateString: string): string => {
-  const date = new Date(dateString)
-  return date.toLocaleDateString('pt-BR')
-}
-
-const formatCPF = (cpf: string): string => {
-  const clean = cpf.replace(/\D/g, '')
-  if (clean.length !== 11) return cpf
-  return `${clean.slice(0, 3)}.${clean.slice(3, 6)}.${clean.slice(6, 9)}-${clean.slice(9)}`
-}
-
-const formatPhone = (phone: string): string => {
-  const clean = phone.replace(/\D/g, '')
-  if (clean.length === 11) {
-    return `(${clean.slice(0, 2)}) ${clean.slice(2, 7)}-${clean.slice(7)}`
-  }
-  if (clean.length === 10) {
-    return `(${clean.slice(0, 2)}) ${clean.slice(2, 6)}-${clean.slice(6)}`
-  }
-  return phone
-}
+import { formatGender, formatDate, formatCPF, formatPhone } from '@/utils/formatters'
 
 interface InfoRowProps {
   label: string
@@ -380,7 +345,7 @@ export function PatientDetailPage() {
                   <InfoRow label="RG" value={patient.rg} />
                   <InfoRow label="Data de Nascimento" value={formatDate(String(patient.dataNascimento))} />
                   <InfoRow label="Idade" value={`${patient.idade} anos`} />
-                  <InfoRow label="Sexo" value={translateGender(patient.genero)} />
+                  <InfoRow label="Sexo" value={formatGender(patient.genero)} />
                 </dl>
               </CardContent>
             </Card>
@@ -606,7 +571,7 @@ export function PatientDetailPage() {
               {patient.nome}
             </h1>
             <p className="text-gray-600 dark:text-gray-400 mt-2">
-              {patient.idade} anos • {translateGender(patient.genero)}
+              {patient.idade} anos • {formatGender(patient.genero)}
             </p>
           </div>
           <div className="flex flex-wrap gap-3">
