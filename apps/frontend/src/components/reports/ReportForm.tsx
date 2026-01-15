@@ -6,6 +6,9 @@ import type { IPatientsProvider, IEvaluationsProvider, IReportsProvider } from '
 import type { Patient, Evaluation } from '@/types'
 import { useAuth } from '@/contexts/AuthContext'
 import { validateForm } from '@/utils/validation'
+import { useLocalAI } from '@/hooks/useLocalAI'
+import { useSettings } from '@/contexts/SettingsContext'
+import type { DiagnosisInput } from '@/services/ai'
 
 interface ReportFormData {
   patientId: string
@@ -24,6 +27,8 @@ interface ReportFormData {
 export function ReportForm() {
   const navigate = useNavigate()
   const { user } = useAuth()
+  const { isReady, analyze } = useLocalAI()
+  const { settings } = useSettings()
   const [patients, setPatients] = useState<Patient[]>([])
   const [evaluations, setEvaluations] = useState<Evaluation[]>([])
   const [filteredEvaluations, setFilteredEvaluations] = useState<Evaluation[]>([])
@@ -31,6 +36,7 @@ export function ReportForm() {
   const [saving, setSaving] = useState(false)
   const [error, setError] = useState<string | null>(null)
   const [fieldErrors, setFieldErrors] = useState<Record<string, string>>({})
+  const [generatingAI, setGeneratingAI] = useState<string | null>(null)
 
   const patientsProviderRef = useRef<IPatientsProvider | null>(null)
   const evaluationsProviderRef = useRef<IEvaluationsProvider | null>(null)
@@ -100,6 +106,118 @@ export function ReportForm() {
     setError(null)
     if (fieldErrors[field]) {
       setFieldErrors(prev => ({ ...prev, [field]: '' }))
+    }
+  }
+
+  // Prepara input de IA de uma avaliação
+  const prepareAIInput = (evaluation: Evaluation): DiagnosisInput => {
+    const patient = patients.find(p => p.id === evaluation.patientId)
+    const input: DiagnosisInput = {
+      idade: patient?.idade,
+      escolaridade: 8,
+    }
+
+    if (evaluation.mmseResult) {
+      input.mmseTotal = evaluation.mmseResult.totalScore
+      input.mmseOrientacao = evaluation.mmseResult.orientation
+      input.mmseAtencao = evaluation.mmseResult.attention
+      input.mmseMemoria = evaluation.mmseResult.recall
+      input.mmseLinguagem = evaluation.mmseResult.language
+    }
+
+    if (evaluation.mocaResult) {
+      input.mocaTotal = evaluation.mocaResult.totalScore
+      input.mocaVisuoespacial = evaluation.mocaResult.visuospatial
+      input.mocaNomeacao = evaluation.mocaResult.naming
+      input.mocaAtencao = evaluation.mocaResult.attention
+      input.mocaLinguagem = evaluation.mocaResult.language
+      input.mocaAbstracao = evaluation.mocaResult.abstraction
+      input.mocaMemoriaTardia = evaluation.mocaResult.memory
+      input.mocaOrientacao = evaluation.mocaResult.orientation
+    }
+
+    if (evaluation.clockDrawingResult) {
+      input.clockDrawingScore = evaluation.clockDrawingResult.totalScore
+    }
+
+    return input
+  }
+
+  // Gera sugestões de IA para um campo específico
+  const handleGenerateWithAI = async (field: keyof ReportFormData) => {
+    if (!settings.ia.habilitado || settings.ia.modelo !== 'local') {
+      setError('IA está desabilitada ou modelo não disponível. Configure nas Configurações.')
+      return
+    }
+
+    if (!formData.evaluationId) {
+      setError('Selecione uma avaliação primeiro para gerar sugestões com IA.')
+      return
+    }
+
+    const selectedEvaluation = evaluations.find(e => e.id === formData.evaluationId)
+    if (!selectedEvaluation) {
+      setError('Avaliação não encontrada.')
+      return
+    }
+
+    if (!selectedEvaluation.mmseResult && !selectedEvaluation.mocaResult && !selectedEvaluation.clockDrawingResult) {
+      setError('A avaliação selecionada não possui resultados de testes cognitivos.')
+      return
+    }
+
+    try {
+      setGeneratingAI(field)
+      const input = prepareAIInput(selectedEvaluation)
+      const aiResult = await analyze(input)
+
+      if (!aiResult || aiResult.predicoes.length === 0) {
+        setError('IA não conseguiu gerar sugestões para esta avaliação.')
+        return
+      }
+
+      const topPrediction = aiResult.predicoes[0]
+      const patient = patients.find(p => p.id === formData.patientId)
+
+      // Gera conteúdo baseado no campo solicitado
+      let generatedText = ''
+      switch (field) {
+        case 'diagnosticoPrincipal':
+          generatedText = `${topPrediction.tipo} (CID-10: ${topPrediction.codigo}) - Probabilidade: ${topPrediction.probabilidade}%`
+          break
+        case 'prognostico':
+          generatedText = `Com base nos resultados dos testes cognitivos (${selectedEvaluation.mmseResult ? `MMSE: ${selectedEvaluation.mmseResult.totalScore}/30` : ''}${selectedEvaluation.mocaResult ? `, MoCA: ${selectedEvaluation.mocaResult.totalScore}/30` : ''}), o paciente apresenta ${topPrediction.tipo.toLowerCase()}. O prognóstico depende da evolução clínica e resposta ao tratamento. ${topPrediction.probabilidade >= 70 ? 'Recomenda-se acompanhamento rigoroso e intervenção terapêutica intensiva.' : 'Acompanhamento regular e medidas preventivas são recomendadas.'}`
+          break
+        case 'tratamentoMedicamentoso':
+          if (topPrediction.tipo.includes('Alzheimer')) {
+            generatedText = 'Sugestão inicial: Inibidores de colinesterase (Donepezila 5-10mg/dia ou Rivastigmina 6-12mg/dia). Considerar associação com Memantina em estágios moderados a graves. Ajustar doses conforme resposta clínica e tolerabilidade.'
+          } else if (topPrediction.tipo.includes('Lewy')) {
+            generatedText = 'Sugestão inicial: Inibidores de colinesterase (Rivastigmina preferível). Evitar neurolépticos típicos (risco de sensibilidade). Para sintomas parkinsonianos, considerar Levodopa em doses baixas.'
+          } else if (topPrediction.tipo.includes('Vascular')) {
+            generatedText = 'Controle rigoroso de fatores de risco cardiovascular. Antiagregantes plaquetários (AAS 100mg/dia ou Clopidogrel). Estatinas para controle de colesterol. Anti-hipertensivos conforme necessário.'
+          } else {
+            generatedText = 'Tratamento farmacológico individualizado conforme evolução clínica e presença de comorbidades. Considerar consulta com neurologista ou geriatra para definição terapêutica específica.'
+          }
+          break
+        case 'tratamentoNaoMedicamentoso':
+          generatedText = `Estimulação cognitiva regular (exercícios de memória, atenção e linguagem). Terapia ocupacional para manutenção de AVDs. Atividade física supervisionada (caminhadas 30min, 3-5x/semana). Orientação familiar e suporte psicológico. ${patient && patient.idade && patient.idade > 75 ? 'Adaptações domiciliares para prevenção de quedas.' : 'Manutenção de vida social ativa.'}`
+          break
+        case 'acompanhamento':
+          generatedText = `Retorno em 30-60 dias para reavaliação clínica. Repetir testes cognitivos (MMSE/MoCA) em 6 meses. ${topPrediction.probabilidade >= 70 ? 'Solicitação de exames complementares: Ressonância Magnética de crânio, dosagem de TSH, B12, ácido fólico.' : 'Acompanhamento semestral ou conforme necessidade clínica.'} Orientar família sobre sinais de alerta (piora cognitiva abrupta, mudanças comportamentais).`
+          break
+        case 'conclusao':
+          generatedText = `Paciente com quadro compatível com ${topPrediction.tipo.toLowerCase()}, baseado em avaliação clínica e testes neuropsicológicos. ${aiResult.recomendacoes.length > 0 ? aiResult.recomendacoes.join(' ') : ''} Plano terapêutico estabelecido conforme descrito acima. Acompanhamento regular recomendado para monitoramento de evolução e ajuste de conduta.`
+          break
+        default:
+          generatedText = topPrediction.descricao
+      }
+
+      handleChange(field, generatedText)
+    } catch (err) {
+      console.error('Erro ao gerar sugestão com IA:', err)
+      setError('Erro ao gerar sugestão com IA. Tente novamente.')
+    } finally {
+      setGeneratingAI(null)
     }
   }
 
@@ -275,12 +393,30 @@ export function ReportForm() {
         <CardHeader title="Diagnóstico" subtitle="Informações diagnósticas" />
         <CardContent>
           <div className="space-y-4">
-            <Input
-              label="Diagnóstico Principal"
-              value={formData.diagnosticoPrincipal}
-              onChange={(e) => handleChange('diagnosticoPrincipal', e.target.value)}
-              placeholder="Ex: Doença de Alzheimer provável"
-            />
+            <div>
+              <div className="flex items-center justify-between mb-1">
+                <label className="block text-sm font-medium text-gray-700 dark:text-gray-300">
+                  Diagnóstico Principal
+                </label>
+                {settings.ia.habilitado && settings.ia.modelo === 'local' && formData.evaluationId && (
+                  <Button
+                    type="button"
+                    variant="outline"
+                    size="sm"
+                    onClick={() => handleGenerateWithAI('diagnosticoPrincipal')}
+                    disabled={!isReady || generatingAI === 'diagnosticoPrincipal'}
+                    className="text-xs"
+                  >
+                    {generatingAI === 'diagnosticoPrincipal' ? '⏳ Gerando...' : '🤖 Gerar com IA'}
+                  </Button>
+                )}
+              </div>
+              <Input
+                value={formData.diagnosticoPrincipal}
+                onChange={(e) => handleChange('diagnosticoPrincipal', e.target.value)}
+                placeholder="Ex: Doença de Alzheimer provável"
+              />
+            </div>
 
             <Input
               label="Diagnósticos Secundários"
@@ -299,9 +435,23 @@ export function ReportForm() {
             />
 
             <div>
-              <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
-                Prognóstico
-              </label>
+              <div className="flex items-center justify-between mb-1">
+                <label className="block text-sm font-medium text-gray-700 dark:text-gray-300">
+                  Prognóstico
+                </label>
+                {settings.ia.habilitado && settings.ia.modelo === 'local' && formData.evaluationId && (
+                  <Button
+                    type="button"
+                    variant="outline"
+                    size="sm"
+                    onClick={() => handleGenerateWithAI('prognostico')}
+                    disabled={!isReady || generatingAI === 'prognostico'}
+                    className="text-xs"
+                  >
+                    {generatingAI === 'prognostico' ? '⏳ Gerando...' : '🤖 Gerar com IA'}
+                  </Button>
+                )}
+              </div>
               <textarea
                 value={formData.prognostico}
                 onChange={(e) => handleChange('prognostico', e.target.value)}
@@ -320,9 +470,23 @@ export function ReportForm() {
         <CardContent>
           <div className="space-y-4">
             <div>
-              <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
-                Tratamento Medicamentoso
-              </label>
+              <div className="flex items-center justify-between mb-1">
+                <label className="block text-sm font-medium text-gray-700 dark:text-gray-300">
+                  Tratamento Medicamentoso
+                </label>
+                {settings.ia.habilitado && settings.ia.modelo === 'local' && formData.evaluationId && (
+                  <Button
+                    type="button"
+                    variant="outline"
+                    size="sm"
+                    onClick={() => handleGenerateWithAI('tratamentoMedicamentoso')}
+                    disabled={!isReady || generatingAI === 'tratamentoMedicamentoso'}
+                    className="text-xs"
+                  >
+                    {generatingAI === 'tratamentoMedicamentoso' ? '⏳ Gerando...' : '🤖 Gerar com IA'}
+                  </Button>
+                )}
+              </div>
               <textarea
                 value={formData.tratamentoMedicamentoso}
                 onChange={(e) => handleChange('tratamentoMedicamentoso', e.target.value)}
@@ -333,9 +497,23 @@ export function ReportForm() {
             </div>
 
             <div>
-              <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
-                Tratamento Não-Medicamentoso
-              </label>
+              <div className="flex items-center justify-between mb-1">
+                <label className="block text-sm font-medium text-gray-700 dark:text-gray-300">
+                  Tratamento Não-Medicamentoso
+                </label>
+                {settings.ia.habilitado && settings.ia.modelo === 'local' && formData.evaluationId && (
+                  <Button
+                    type="button"
+                    variant="outline"
+                    size="sm"
+                    onClick={() => handleGenerateWithAI('tratamentoNaoMedicamentoso')}
+                    disabled={!isReady || generatingAI === 'tratamentoNaoMedicamentoso'}
+                    className="text-xs"
+                  >
+                    {generatingAI === 'tratamentoNaoMedicamentoso' ? '⏳ Gerando...' : '🤖 Gerar com IA'}
+                  </Button>
+                )}
+              </div>
               <textarea
                 value={formData.tratamentoNaoMedicamentoso}
                 onChange={(e) => handleChange('tratamentoNaoMedicamentoso', e.target.value)}
@@ -346,9 +524,23 @@ export function ReportForm() {
             </div>
 
             <div>
-              <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
-                Acompanhamento
-              </label>
+              <div className="flex items-center justify-between mb-1">
+                <label className="block text-sm font-medium text-gray-700 dark:text-gray-300">
+                  Acompanhamento
+                </label>
+                {settings.ia.habilitado && settings.ia.modelo === 'local' && formData.evaluationId && (
+                  <Button
+                    type="button"
+                    variant="outline"
+                    size="sm"
+                    onClick={() => handleGenerateWithAI('acompanhamento')}
+                    disabled={!isReady || generatingAI === 'acompanhamento'}
+                    className="text-xs"
+                  >
+                    {generatingAI === 'acompanhamento' ? '⏳ Gerando...' : '🤖 Gerar com IA'}
+                  </Button>
+                )}
+              </div>
               <textarea
                 value={formData.acompanhamento}
                 onChange={(e) => handleChange('acompanhamento', e.target.value)}
@@ -366,9 +558,23 @@ export function ReportForm() {
         <CardHeader title="Conclusão" subtitle="Considerações finais" />
         <CardContent>
           <div>
-            <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
-              Conclusão do Relatório
-            </label>
+            <div className="flex items-center justify-between mb-1">
+              <label className="block text-sm font-medium text-gray-700 dark:text-gray-300">
+                Conclusão do Relatório
+              </label>
+              {settings.ia.habilitado && settings.ia.modelo === 'local' && formData.evaluationId && (
+                <Button
+                  type="button"
+                  variant="outline"
+                  size="sm"
+                  onClick={() => handleGenerateWithAI('conclusao')}
+                  disabled={!isReady || generatingAI === 'conclusao'}
+                  className="text-xs"
+                >
+                  {generatingAI === 'conclusao' ? '⏳ Gerando...' : '🤖 Gerar com IA'}
+                </Button>
+              )}
+            </div>
             <textarea
               value={formData.conclusao}
               onChange={(e) => handleChange('conclusao', e.target.value)}

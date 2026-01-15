@@ -5,6 +5,7 @@ import { Card, CardHeader, CardContent, Button, Tabs, Tab } from '@/components/u
 import { EvolutionChart } from '@/components/charts/EvolutionChart'
 import { TimelineView } from '@/components/charts/TimelineView'
 import { ComparisonView } from '@/components/charts/ComparisonView'
+import { LongitudinalAIAnalysis } from '@/components/evaluations'
 import {
   getPatientsProvider,
   getEvaluationsProvider,
@@ -581,6 +582,17 @@ export function PatientDetailPage() {
             </Card>
           )}
         </div>
+      )
+    },
+    {
+      id: 'ia',
+      label: 'Análise de IA',
+      icon: '🤖',
+      content: (
+        <LongitudinalAIAnalysis
+          evaluations={evaluations}
+          patientAge={patient.idade}
+        />
       )
     }
   ]
