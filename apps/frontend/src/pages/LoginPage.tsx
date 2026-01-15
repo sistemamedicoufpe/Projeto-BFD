@@ -1,7 +1,7 @@
 import { useState } from 'react'
 import { Link, useNavigate } from 'react-router-dom'
 import { useAuth } from '@/contexts/AuthContext'
-import { Button, Input, Card } from '@/components/ui'
+import { Button, Input, Card, Logo } from '@/components/ui'
 import { validateForm } from '@/utils/validation'
 
 export function LoginPage() {
@@ -61,19 +61,17 @@ export function LoginPage() {
   }
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-primary-50 to-secondary-50 flex items-center justify-center p-4">
+    <div className="min-h-screen bg-gradient-to-br from-primary-50 to-secondary-50 dark:from-gray-900 dark:to-gray-800 flex items-center justify-center p-4">
       <Card className="w-full max-w-md">
         <div className="text-center mb-6">
-          <div className="inline-flex items-center justify-center w-16 h-16 bg-primary-600 rounded-full mb-4">
-            <span className="text-3xl">🧠</span>
-          </div>
-          <h1 className="text-2xl font-bold text-gray-900">NeuroDiagnóstico</h1>
-          <p className="text-gray-600 mt-2">Sistema de Avaliação Neurológica</p>
+          <Logo className="mb-4" />
+          <h1 className="text-2xl font-bold text-gray-900 dark:text-gray-100">NeuroDiagnóstico</h1>
+          <p className="text-gray-600 dark:text-gray-400 mt-2">Sistema de Avaliação Neurológica</p>
         </div>
 
         <form onSubmit={handleSubmit} className="space-y-4">
           {error && (
-            <div className="bg-red-50 border border-red-200 text-red-700 px-4 py-3 rounded-lg">
+            <div className="bg-red-50 dark:bg-red-900/20 border border-red-200 dark:border-red-800 text-red-700 dark:text-red-400 px-4 py-3 rounded-lg">
               {error}
             </div>
           )}
@@ -115,9 +113,9 @@ export function LoginPage() {
         </form>
 
         <div className="mt-6 text-center">
-          <p className="text-sm text-gray-600">
+          <p className="text-sm text-gray-600 dark:text-gray-400">
             Não tem uma conta?{' '}
-            <Link to="/registro" className="text-primary-600 hover:text-primary-700 font-medium">
+            <Link to="/registro" className="text-primary-600 dark:text-primary-400 hover:text-primary-700 dark:hover:text-primary-300 font-medium">
               Registre-se aqui
             </Link>
           </p>
