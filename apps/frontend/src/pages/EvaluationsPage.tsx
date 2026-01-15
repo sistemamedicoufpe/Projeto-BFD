@@ -15,7 +15,6 @@ export function EvaluationsPage() {
   const [evaluations, setEvaluations] = useState<EvaluationWithPatient[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
-  const [_filterStatus, _setFilterStatus] = useState<string>('all');
   const [searchQuery, setSearchQuery] = useState('');
   const [deleting, setDeleting] = useState<string | null>(null);
   const [deleteModal, setDeleteModal] = useState<{ isOpen: boolean; evaluationId: string | null }>({
