@@ -2,9 +2,11 @@ import { useState, useEffect, useRef } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import { Layout } from '@/components/layout';
 import { Card, CardHeader, CardContent, Button } from '@/components/ui';
+import { AIAnalysisPanel } from '@/components/evaluations';
 import { getEvaluationsProvider, getPatientsProvider } from '@/services/providers/factory/provider-factory';
 import type { IEvaluationsProvider, ProviderPatient } from '@/services/providers/types';
 import type { Evaluation } from '@/types';
+import type { DiagnosisInput } from '@/services/ai';
 
 const formatDate = (dateValue: Date | string): string => {
   const date = new Date(dateValue);
@@ -36,6 +38,39 @@ function InfoRow({ label, value, className = '' }: InfoRowProps) {
 interface EvaluationWithPatient extends Evaluation {
   patient?: ProviderPatient;
 }
+
+// Helper function to prepare AI input from evaluation data
+const prepareAIInputFromEvaluation = (evaluation: EvaluationWithPatient): DiagnosisInput => {
+  const input: DiagnosisInput = {
+    idade: evaluation.patient?.idade,
+    escolaridade: 8, // Default value
+  };
+
+  if (evaluation.mmseResult) {
+    input.mmseTotal = evaluation.mmseResult.totalScore;
+    input.mmseOrientacao = evaluation.mmseResult.orientation;
+    input.mmseAtencao = evaluation.mmseResult.attention;
+    input.mmseMemoria = evaluation.mmseResult.recall;
+    input.mmseLinguagem = evaluation.mmseResult.language;
+  }
+
+  if (evaluation.mocaResult) {
+    input.mocaTotal = evaluation.mocaResult.totalScore;
+    input.mocaVisuoespacial = evaluation.mocaResult.visuospatial;
+    input.mocaNomeacao = evaluation.mocaResult.naming;
+    input.mocaAtencao = evaluation.mocaResult.attention;
+    input.mocaLinguagem = evaluation.mocaResult.language;
+    input.mocaAbstracao = evaluation.mocaResult.abstraction;
+    input.mocaMemoriaTardia = evaluation.mocaResult.memory;
+    input.mocaOrientacao = evaluation.mocaResult.orientation;
+  }
+
+  if (evaluation.clockDrawingResult) {
+    input.clockDrawingScore = evaluation.clockDrawingResult.totalScore;
+  }
+
+  return input;
+};
 
 export function EvaluationDetailPage() {
   const { id } = useParams<{ id: string }>();
@@ -292,6 +327,16 @@ export function EvaluationDetailPage() {
                 </p>
               </CardContent>
             </Card>
+          )}
+
+          {/* AI Analysis */}
+          {(evaluation.mmseResult || evaluation.mocaResult || evaluation.clockDrawingResult) && (
+            <div className="lg:col-span-2">
+              <AIAnalysisPanel
+                input={prepareAIInputFromEvaluation(evaluation)}
+                autoAnalyze={false}
+              />
+            </div>
           )}
         </div>
 

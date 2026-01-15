@@ -2,11 +2,12 @@ import { useState, useEffect, useCallback, useRef } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { Layout } from '@/components/layout';
 import { Card, CardHeader, CardContent, Button, Input } from '@/components/ui';
-import { MMSETest, MoCATest, ClockDrawingTest } from '@/components/evaluations';
+import { MMSETest, MoCATest, ClockDrawingTest, AIAnalysisPanel } from '@/components/evaluations';
 import { getEvaluationsProvider, getPatientsProvider } from '@/services/providers/factory/provider-factory';
 import type { IEvaluationsProvider, IPatientsProvider, ProviderPatient } from '@/services/providers/types';
 import { validateForm } from '@/utils/validation';
 import { useAuth } from '@/contexts/AuthContext';
+import type { DiagnosisInput, DiagnosisResult } from '@/services/ai';
 
 type Step = 'basic-info' | 'neurological-exam' | 'test-selection' | 'mmse-test' | 'moca-test' | 'clock-test' | 'review';
 
@@ -142,6 +143,7 @@ export function EvaluationCreatePage() {
   const [mmseResult, setMmseResult] = useState<MMSEResult | null>(null);
   const [mocaResult, setMocaResult] = useState<MoCAResult | null>(null);
   const [clockResult, setClockResult] = useState<ClockDrawingResult | null>(null);
+  const [aiResult, setAiResult] = useState<DiagnosisResult | null>(null);
 
   const loadPatients = useCallback(async () => {
     try {
@@ -267,6 +269,60 @@ export function EvaluationCreatePage() {
     setStep('test-selection');
   };
 
+  const prepareAIInput = (): DiagnosisInput => {
+    const input: DiagnosisInput = {
+      idade: selectedPatient?.idade,
+      escolaridade: 8, // Default, pode ser ajustado se tiver o dado
+    };
+
+    // MMSE scores
+    if (mmseResult) {
+      input.mmseTotal = mmseResult.totalScore;
+      input.mmseOrientacao = mmseResult.domainScores.orientacao?.score;
+      input.mmseMemoria = mmseResult.domainScores.memoria?.score;
+      input.mmseAtencao = mmseResult.domainScores.atencao?.score;
+      input.mmseLinguagem = mmseResult.domainScores.linguagem?.score;
+      input.mmseHabilidadeVisuoespacial = mmseResult.domainScores.praxia?.score;
+    }
+
+    // MoCA scores
+    if (mocaResult) {
+      input.mocaTotal = mocaResult.adjustedScore ?? mocaResult.totalScore;
+      input.mocaVisuoespacial = mocaResult.domainScores.visuoespacial?.score;
+      input.mocaNomeacao = mocaResult.domainScores.nomeacao?.score;
+      input.mocaAtencao = mocaResult.domainScores.atencao?.score;
+      input.mocaLinguagem = mocaResult.domainScores.linguagem?.score;
+      input.mocaAbstracao = mocaResult.domainScores.abstracao?.score;
+      input.mocaMemoriaTardia = mocaResult.domainScores.memoria?.score;
+      input.mocaOrientacao = mocaResult.domainScores.orientacao?.score;
+    }
+
+    // Clock Drawing
+    if (clockResult) {
+      input.clockDrawingScore = clockResult.score;
+    }
+
+    // Clinical observations from neurological exam
+    if (neurologicalExam.comportamento?.toLowerCase().includes('alterado') ||
+        neurologicalExam.comportamento?.toLowerCase().includes('agitado') ||
+        neurologicalExam.comportamento?.toLowerCase().includes('apatico')) {
+      input.alteracaoComportamento = true;
+    }
+    if (neurologicalExam.memoria?.toLowerCase().includes('alterada') ||
+        neurologicalExam.memoria?.toLowerCase().includes('comprometida')) {
+      input.alteracaoMemoriaRecente = true;
+    }
+    if (neurologicalExam.orientacao?.toLowerCase().includes('desorientado')) {
+      input.desorientacaoEspacial = true;
+    }
+
+    return input;
+  };
+
+  const handleAIAnalysisComplete = (result: DiagnosisResult) => {
+    setAiResult(result);
+  };
+
   const handleSave = async () => {
     try {
       setSaving(true);
@@ -276,6 +332,29 @@ export function EvaluationCreatePage() {
         evaluationsProviderRef.current = await getEvaluationsProvider();
       }
 
+      // Prepare observations
+      const observations = [
+        mmseResult ? `MMSE: ${mmseResult.totalScore}/30 - ${mmseResult.interpretation}` : '',
+        mocaResult ? `MoCA: ${mocaResult.adjustedScore ?? mocaResult.totalScore}/30 - ${mocaResult.interpretation}` : '',
+        clockResult ? `Teste do Relogio: ${clockResult.score}/5 - ${clockResult.interpretation}` : '',
+      ].filter(Boolean);
+
+      // Add AI analysis if available
+      if (aiResult && aiResult.predicoes.length > 0) {
+        observations.push('\n--- Análise de IA (TensorFlow.js Local) ---');
+        observations.push(`Confiança: ${aiResult.confiancaGeral}%`);
+        observations.push('\nHipóteses Diagnósticas:');
+        aiResult.predicoes.forEach((pred, idx) => {
+          observations.push(`${idx + 1}. ${pred.tipo} (${pred.codigo}) - ${pred.probabilidade}%`);
+        });
+        if (aiResult.recomendacoes.length > 0) {
+          observations.push('\nRecomendações:');
+          aiResult.recomendacoes.forEach((rec, idx) => {
+            observations.push(`${idx + 1}. ${rec}`);
+          });
+        }
+      }
+
       const evaluationData = {
         patientId: basicInfo.patientId,
         data: basicInfo.dataAvaliacao,
@@ -283,16 +362,17 @@ export function EvaluationCreatePage() {
         queixaPrincipal: basicInfo.queixaPrincipal,
         historiaDoenca: basicInfo.historicoDoencaAtual || '',
         exameNeurologico: neurologicalExam,
-        hipoteseDiagnostica: basicInfo.hipoteseDiagnostica ? [{
-          diagnostico: basicInfo.hipoteseDiagnostica,
-          probabilidade: 50,
-        }] : [],
+        hipoteseDiagnostica: aiResult && aiResult.predicoes.length > 0
+          ? aiResult.predicoes.map(pred => ({
+              diagnostico: pred.tipo,
+              probabilidade: pred.probabilidade,
+            }))
+          : basicInfo.hipoteseDiagnostica ? [{
+              diagnostico: basicInfo.hipoteseDiagnostica,
+              probabilidade: 50,
+            }] : [],
         conduta: '',
-        observacoes: [
-          mmseResult ? `MMSE: ${mmseResult.totalScore}/30 - ${mmseResult.interpretation}` : '',
-          mocaResult ? `MoCA: ${mocaResult.adjustedScore ?? mocaResult.totalScore}/30 - ${mocaResult.interpretation}` : '',
-          clockResult ? `Teste do Relogio: ${clockResult.score}/5 - ${clockResult.interpretation}` : '',
-        ].filter(Boolean).join('\n'),
+        observacoes: observations.join('\n'),
       };
 
       await evaluationsProviderRef.current.create(evaluationData);
@@ -1122,6 +1202,15 @@ export function EvaluationCreatePage() {
                 </div>
               </CardContent>
             </Card>
+
+            {/* AI Analysis */}
+            {(mmseResult || mocaResult || clockResult) && (
+              <AIAnalysisPanel
+                input={prepareAIInput()}
+                onAnalysisComplete={handleAIAnalysisComplete}
+                autoAnalyze={true}
+              />
+            )}
 
             <div className="flex justify-between">
               <Button
