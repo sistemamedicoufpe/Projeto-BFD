@@ -36,6 +36,7 @@ export function ExamsPage() {
 
   useEffect(() => {
     filterExams()
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [searchTerm, selectedType, exams])
 
   const loadExams = async () => {

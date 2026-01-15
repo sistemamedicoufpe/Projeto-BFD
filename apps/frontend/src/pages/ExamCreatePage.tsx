@@ -48,6 +48,7 @@ export function ExamCreatePage() {
     if (isEditing) {
       loadExam()
     }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [id])
 
   const loadPatients = async () => {

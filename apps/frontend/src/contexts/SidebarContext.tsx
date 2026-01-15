@@ -43,6 +43,7 @@ export function SidebarProvider({ children }: { children: ReactNode }) {
     }
 
     return () => window.removeEventListener('resize', checkMobile)
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [])
 
   const toggleSidebar = () => setIsOpen(prev => !prev)
