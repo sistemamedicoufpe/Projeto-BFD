@@ -51,13 +51,19 @@ export function SettingsProvider({ children }: SettingsProviderProps) {
   const [isOnline, setIsOnline] = useState(navigator.onLine)
   const [isSyncing, setIsSyncing] = useState(false)
 
-  // Carregar configurações do localStorage
+  // Carregar configurações do localStorage com deep merge
   useEffect(() => {
     const savedSettings = localStorage.getItem(SETTINGS_KEY)
     if (savedSettings) {
       try {
         const parsed = JSON.parse(savedSettings)
-        setSettings(prev => ({ ...prev, ...parsed }))
+        // Deep merge para garantir que todas as seções existam
+        setSettings(prev => ({
+          geral: { ...prev.geral, ...parsed.geral },
+          seguranca: { ...prev.seguranca, ...parsed.seguranca },
+          privacidade: { ...prev.privacidade, ...parsed.privacidade },
+          ia: { ...prev.ia, ...parsed.ia },
+        }))
       } catch (error) {
         console.error('Erro ao carregar configurações:', error)
       }
