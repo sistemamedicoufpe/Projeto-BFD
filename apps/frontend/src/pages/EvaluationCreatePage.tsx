@@ -2,13 +2,12 @@ import { useState, useEffect, useCallback, useRef } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { Layout } from '@/components/layout';
 import { Card, CardHeader, CardContent, Button, Input } from '@/components/ui';
-import { MMSETest } from '@/components/evaluations';
+import { MMSETest, MoCATest, ClockDrawingTest } from '@/components/evaluations';
 import { getEvaluationsProvider, getPatientsProvider } from '@/services/providers/factory/provider-factory';
-import type { IEvaluationsProvider, IPatientsProvider } from '@/services/providers/types';
-import type { Patient } from '@neurocare/shared-types';
+import type { IEvaluationsProvider, IPatientsProvider, ProviderPatient } from '@/services/providers/types';
 import { validateForm } from '@/utils/validation';
 
-type Step = 'basic-info' | 'mmse-test' | 'review';
+type Step = 'basic-info' | 'test-selection' | 'mmse-test' | 'moca-test' | 'clock-test' | 'review';
 
 interface MMSEResult {
   totalScore: number;
@@ -17,6 +16,34 @@ interface MMSEResult {
   interpretation: string;
   domainScores: Record<string, { score: number; maxScore: number }>;
   responses: Record<number, number>;
+  completedAt: string;
+}
+
+interface MoCAResult {
+  totalScore: number;
+  maxScore: number;
+  percentage: number;
+  interpretation: string;
+  domainScores: Record<string, { score: number; maxScore: number }>;
+  responses: Record<number, number>;
+  completedAt: string;
+  educationAdjusted: boolean;
+  adjustedScore?: number;
+}
+
+interface ClockDrawingResult {
+  score: number;
+  maxScore: number;
+  percentage: number;
+  interpretation: string;
+  criteria: {
+    contour: boolean;
+    numbers: boolean;
+    numberPosition: boolean;
+    hands: boolean;
+    handPosition: boolean;
+  };
+  drawingData: string;
   completedAt: string;
 }
 
@@ -32,10 +59,16 @@ interface BasicInfo {
   cid10: string;
 }
 
+interface SelectedTests {
+  mmse: boolean;
+  moca: boolean;
+  clockDrawing: boolean;
+}
+
 export function EvaluationCreatePage() {
   const navigate = useNavigate();
   const [step, setStep] = useState<Step>('basic-info');
-  const [patients, setPatients] = useState<Patient[]>([]);
+  const [patients, setPatients] = useState<ProviderPatient[]>([]);
   const [loadingPatients, setLoadingPatients] = useState(true);
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState<string | null>(null);
@@ -56,7 +89,15 @@ export function EvaluationCreatePage() {
     cid10: '',
   });
 
+  const [selectedTests, setSelectedTests] = useState<SelectedTests>({
+    mmse: true,
+    moca: false,
+    clockDrawing: false,
+  });
+
   const [mmseResult, setMmseResult] = useState<MMSEResult | null>(null);
+  const [mocaResult, setMocaResult] = useState<MoCAResult | null>(null);
+  const [clockResult, setClockResult] = useState<ClockDrawingResult | null>(null);
 
   const loadPatients = useCallback(async () => {
     try {
@@ -83,7 +124,6 @@ export function EvaluationCreatePage() {
   const handleBasicInfoChange = (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement | HTMLSelectElement>) => {
     const { name, value } = e.target;
     setBasicInfo(prev => ({ ...prev, [name]: value }));
-    // Limpar erro do campo quando o usuário digita
     if (fieldErrors[name]) {
       setFieldErrors(prev => ({ ...prev, [name]: '' }));
     }
@@ -98,14 +138,14 @@ export function EvaluationCreatePage() {
       dataAvaliacao: {
         value: basicInfo.dataAvaliacao,
         rules: [
-          { type: 'required', message: 'Data da avaliação é obrigatória' },
-          { type: 'date', message: 'Data inválida' },
+          { type: 'required', message: 'Data da avaliacao e obrigatoria' },
+          { type: 'date', message: 'Data invalida' },
         ],
       },
       queixaPrincipal: {
         value: basicInfo.queixaPrincipal,
         rules: [
-          { type: 'required', message: 'Queixa principal é obrigatória' },
+          { type: 'required', message: 'Queixa principal e obrigatoria' },
           { type: 'minLength', length: 10, message: 'Queixa principal deve ter pelo menos 10 caracteres' },
         ],
       },
@@ -117,20 +157,60 @@ export function EvaluationCreatePage() {
 
   const handleBasicInfoNext = () => {
     if (!validateBasicInfo()) {
-      setError('Por favor, corrija os erros no formulário');
+      setError('Por favor, corrija os erros no formulario');
       return;
     }
     setError(null);
-    setStep('mmse-test');
+    setStep('test-selection');
+  };
+
+  const handleTestSelectionNext = () => {
+    if (!selectedTests.mmse && !selectedTests.moca && !selectedTests.clockDrawing) {
+      setError('Selecione pelo menos um teste para aplicar');
+      return;
+    }
+    setError(null);
+
+    // Navigate to first selected test
+    if (selectedTests.mmse) {
+      setStep('mmse-test');
+    } else if (selectedTests.moca) {
+      setStep('moca-test');
+    } else if (selectedTests.clockDrawing) {
+      setStep('clock-test');
+    }
+  };
+
+  const getNextStep = (currentStep: Step): Step => {
+    if (currentStep === 'mmse-test') {
+      if (selectedTests.moca) return 'moca-test';
+      if (selectedTests.clockDrawing) return 'clock-test';
+      return 'review';
+    }
+    if (currentStep === 'moca-test') {
+      if (selectedTests.clockDrawing) return 'clock-test';
+      return 'review';
+    }
+    return 'review';
   };
 
   const handleMMSEComplete = (result: MMSEResult) => {
     setMmseResult(result);
+    setStep(getNextStep('mmse-test'));
+  };
+
+  const handleMoCAComplete = (result: MoCAResult) => {
+    setMocaResult(result);
+    setStep(getNextStep('moca-test'));
+  };
+
+  const handleClockComplete = (result: ClockDrawingResult) => {
+    setClockResult(result);
     setStep('review');
   };
 
-  const handleMMSECancel = () => {
-    setStep('basic-info');
+  const handleTestCancel = () => {
+    setStep('test-selection');
   };
 
   const handleSave = async () => {
@@ -144,27 +224,32 @@ export function EvaluationCreatePage() {
 
       const evaluationData = {
         patientId: basicInfo.patientId,
-        dataAvaliacao: basicInfo.dataAvaliacao,
+        data: basicInfo.dataAvaliacao,
+        medico: 'Dr. Usuario', // TODO: Get from auth context
         queixaPrincipal: basicInfo.queixaPrincipal,
-        historicoDoencaAtual: basicInfo.historicoDoencaAtual || undefined,
-        antecedentesPessoais: basicInfo.antecedentesPessoais || undefined,
-        antecedentesFamiliares: basicInfo.antecedentesFamiliares || undefined,
-        medicamentosEmUso: basicInfo.medicamentosEmUso || undefined,
-        hipoteseDiagnostica: basicInfo.hipoteseDiagnostica || undefined,
-        cid10: basicInfo.cid10 || undefined,
-        status: 'IN_PROGRESS' as const,
-        mmseResult: mmseResult || undefined,
+        historiaDoenca: basicInfo.historicoDoencaAtual || '',
+        exameNeurologico: {},
+        hipoteseDiagnostica: basicInfo.hipoteseDiagnostica ? [{
+          diagnostico: basicInfo.hipoteseDiagnostica,
+          probabilidade: 50,
+        }] : [],
+        conduta: '',
+        observacoes: [
+          mmseResult ? `MMSE: ${mmseResult.totalScore}/30 - ${mmseResult.interpretation}` : '',
+          mocaResult ? `MoCA: ${mocaResult.adjustedScore ?? mocaResult.totalScore}/30 - ${mocaResult.interpretation}` : '',
+          clockResult ? `Teste do Relogio: ${clockResult.score}/5 - ${clockResult.interpretation}` : '',
+        ].filter(Boolean).join('\n'),
       };
 
       await evaluationsProviderRef.current.create(evaluationData);
       navigate('/avaliacoes');
     } catch (err: unknown) {
-      console.error('Erro ao salvar avaliação:', err);
+      console.error('Erro ao salvar avaliacao:', err);
       const error = err as { response?: { data?: { message?: string } }; message?: string };
       const errorMessage =
         error?.response?.data?.message ||
         error?.message ||
-        'Erro ao salvar avaliação. Tente novamente.';
+        'Erro ao salvar avaliacao. Tente novamente.';
       setError(errorMessage);
     } finally {
       setSaving(false);
@@ -173,41 +258,69 @@ export function EvaluationCreatePage() {
 
   const selectedPatient = patients.find(p => p.id === basicInfo.patientId);
 
+  const getStepNumber = (): number => {
+    switch (step) {
+      case 'basic-info': return 1;
+      case 'test-selection': return 2;
+      case 'mmse-test':
+      case 'moca-test':
+      case 'clock-test': return 3;
+      case 'review': return 4;
+      default: return 1;
+    }
+  };
+
+  const getTestStepLabel = (): string => {
+    if (step === 'mmse-test') return 'MMSE';
+    if (step === 'moca-test') return 'MoCA';
+    if (step === 'clock-test') return 'Teste do Relogio';
+    return 'Testes';
+  };
+
   return (
     <Layout>
       <div className="space-y-6">
         <div>
-          <h1 className="text-3xl font-bold text-gray-900">Nova Avaliação Neurológica</h1>
-          <p className="text-gray-600 mt-2">Realize uma avaliação completa com testes cognitivos</p>
+          <h1 className="text-3xl font-bold text-gray-900 dark:text-gray-100">Nova Avaliacao Neurologica</h1>
+          <p className="text-gray-600 dark:text-gray-400 mt-2">Realize uma avaliacao completa com testes cognitivos</p>
         </div>
 
         {/* Progress Steps */}
         <div className="flex items-center justify-center space-x-4">
-          <div className={`flex items-center ${step === 'basic-info' ? 'text-primary-600' : 'text-gray-400'}`}>
+          <div className={`flex items-center ${getStepNumber() >= 1 ? 'text-primary-600' : 'text-gray-400'}`}>
             <div className={`w-8 h-8 rounded-full flex items-center justify-center border-2 ${
-              step === 'basic-info' ? 'border-primary-600 bg-primary-50' : 'border-gray-300'
+              getStepNumber() >= 1 ? 'border-primary-600 bg-primary-50 dark:bg-primary-900/30' : 'border-gray-300'
             }`}>
               1
             </div>
-            <span className="ml-2 font-medium">Informações Básicas</span>
+            <span className="ml-2 font-medium hidden sm:inline">Informacoes</span>
           </div>
-          <div className="w-16 h-0.5 bg-gray-300"></div>
-          <div className={`flex items-center ${step === 'mmse-test' ? 'text-primary-600' : 'text-gray-400'}`}>
+          <div className="w-8 sm:w-16 h-0.5 bg-gray-300"></div>
+          <div className={`flex items-center ${getStepNumber() >= 2 ? 'text-primary-600' : 'text-gray-400'}`}>
             <div className={`w-8 h-8 rounded-full flex items-center justify-center border-2 ${
-              step === 'mmse-test' ? 'border-primary-600 bg-primary-50' : 'border-gray-300'
+              getStepNumber() >= 2 ? 'border-primary-600 bg-primary-50 dark:bg-primary-900/30' : 'border-gray-300'
             }`}>
               2
             </div>
-            <span className="ml-2 font-medium">Teste MMSE</span>
+            <span className="ml-2 font-medium hidden sm:inline">Selecao</span>
           </div>
-          <div className="w-16 h-0.5 bg-gray-300"></div>
-          <div className={`flex items-center ${step === 'review' ? 'text-primary-600' : 'text-gray-400'}`}>
+          <div className="w-8 sm:w-16 h-0.5 bg-gray-300"></div>
+          <div className={`flex items-center ${getStepNumber() >= 3 ? 'text-primary-600' : 'text-gray-400'}`}>
             <div className={`w-8 h-8 rounded-full flex items-center justify-center border-2 ${
-              step === 'review' ? 'border-primary-600 bg-primary-50' : 'border-gray-300'
+              getStepNumber() >= 3 ? 'border-primary-600 bg-primary-50 dark:bg-primary-900/30' : 'border-gray-300'
             }`}>
               3
             </div>
-            <span className="ml-2 font-medium">Revisão</span>
+            <span className="ml-2 font-medium hidden sm:inline">{getTestStepLabel()}</span>
+          </div>
+          <div className="w-8 sm:w-16 h-0.5 bg-gray-300"></div>
+          <div className={`flex items-center ${getStepNumber() >= 4 ? 'text-primary-600' : 'text-gray-400'}`}>
+            <div className={`w-8 h-8 rounded-full flex items-center justify-center border-2 ${
+              getStepNumber() >= 4 ? 'border-primary-600 bg-primary-50 dark:bg-primary-900/30' : 'border-gray-300'
+            }`}>
+              4
+            </div>
+            <span className="ml-2 font-medium hidden sm:inline">Revisao</span>
           </div>
         </div>
 
@@ -221,7 +334,7 @@ export function EvaluationCreatePage() {
         {step === 'basic-info' && (
           <div className="space-y-6">
             <Card>
-              <CardHeader title="Informações da Avaliação" />
+              <CardHeader title="Informacoes da Avaliacao" />
               <CardContent>
                 <div className="space-y-4">
                   <div>
@@ -266,7 +379,7 @@ export function EvaluationCreatePage() {
 
                   <div>
                     <label htmlFor="dataAvaliacao" className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
-                      Data da Avaliação *
+                      Data da Avaliacao *
                     </label>
                     <Input
                       id="dataAvaliacao"
@@ -302,7 +415,7 @@ export function EvaluationCreatePage() {
 
                   <div>
                     <label htmlFor="historicoDoencaAtual" className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
-                      História da Doença Atual
+                      Historia da Doenca Atual
                     </label>
                     <textarea
                       id="historicoDoencaAtual"
@@ -311,60 +424,14 @@ export function EvaluationCreatePage() {
                       onChange={handleBasicInfoChange}
                       rows={4}
                       className="w-full px-4 py-2 border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-700 text-gray-900 dark:text-gray-100 focus:ring-2 focus:ring-primary-500 focus:border-transparent"
-                      placeholder="Descreva o histórico da doença atual..."
-                    />
-                  </div>
-
-                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                    <div>
-                      <label htmlFor="antecedentesPessoais" className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
-                        Antecedentes Pessoais
-                      </label>
-                      <textarea
-                        id="antecedentesPessoais"
-                        name="antecedentesPessoais"
-                        value={basicInfo.antecedentesPessoais}
-                        onChange={handleBasicInfoChange}
-                        rows={3}
-                        className="w-full px-4 py-2 border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-700 text-gray-900 dark:text-gray-100 focus:ring-2 focus:ring-primary-500 focus:border-transparent"
-                        placeholder="Histórico médico pessoal..."
-                      />
-                    </div>
-
-                    <div>
-                      <label htmlFor="antecedentesFamiliares" className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
-                        Antecedentes Familiares
-                      </label>
-                      <textarea
-                        id="antecedentesFamiliares"
-                        name="antecedentesFamiliares"
-                        value={basicInfo.antecedentesFamiliares}
-                        onChange={handleBasicInfoChange}
-                        rows={3}
-                        className="w-full px-4 py-2 border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-700 text-gray-900 dark:text-gray-100 focus:ring-2 focus:ring-primary-500 focus:border-transparent"
-                        placeholder="Histórico médico familiar..."
-                      />
-                    </div>
-                  </div>
-
-                  <div>
-                    <label htmlFor="medicamentosEmUso" className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
-                      Medicamentos em Uso
-                    </label>
-                    <Input
-                      id="medicamentosEmUso"
-                      name="medicamentosEmUso"
-                      type="text"
-                      value={basicInfo.medicamentosEmUso}
-                      onChange={handleBasicInfoChange}
-                      placeholder="Liste os medicamentos..."
+                      placeholder="Descreva o historico da doenca atual..."
                     />
                   </div>
 
                   <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                     <div>
                       <label htmlFor="hipoteseDiagnostica" className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
-                        Hipótese Diagnóstica
+                        Hipotese Diagnostica
                       </label>
                       <Input
                         id="hipoteseDiagnostica"
@@ -372,7 +439,7 @@ export function EvaluationCreatePage() {
                         type="text"
                         value={basicInfo.hipoteseDiagnostica}
                         onChange={handleBasicInfoChange}
-                        placeholder="Ex: Doença de Alzheimer"
+                        placeholder="Ex: Doenca de Alzheimer"
                       />
                     </div>
 
@@ -397,86 +464,303 @@ export function EvaluationCreatePage() {
             <div className="flex justify-between">
               <Button
                 onClick={() => navigate('/avaliacoes')}
-                className="bg-gray-200 text-gray-700 hover:bg-gray-300"
+                className="bg-gray-200 text-gray-700 hover:bg-gray-300 dark:bg-gray-700 dark:text-gray-300 dark:hover:bg-gray-600"
               >
                 Cancelar
               </Button>
               <Button onClick={handleBasicInfoNext}>
-                Próximo: Aplicar MMSE →
+                Proximo: Selecionar Testes
               </Button>
             </div>
           </div>
         )}
 
-        {/* Step 2: MMSE Test */}
+        {/* Step 2: Test Selection */}
+        {step === 'test-selection' && (
+          <div className="space-y-6">
+            <Card>
+              <CardHeader
+                title="Selecione os Testes Cognitivos"
+                subtitle="Escolha quais testes deseja aplicar nesta avaliacao"
+              />
+              <CardContent>
+                <div className="space-y-4">
+                  {/* MMSE */}
+                  <label className={`flex items-start gap-4 p-4 border-2 rounded-lg cursor-pointer transition-colors ${
+                    selectedTests.mmse
+                      ? 'border-primary-600 bg-primary-50 dark:bg-primary-900/30'
+                      : 'border-gray-200 dark:border-gray-700 hover:border-primary-300'
+                  }`}>
+                    <input
+                      type="checkbox"
+                      checked={selectedTests.mmse}
+                      onChange={() => setSelectedTests(prev => ({ ...prev, mmse: !prev.mmse }))}
+                      className="mt-1 h-5 w-5 text-primary-600 rounded focus:ring-2 focus:ring-primary-500"
+                    />
+                    <div className="flex-1">
+                      <div className="flex items-center gap-2">
+                        <h3 className="font-semibold text-gray-900 dark:text-gray-100">MMSE - Mini Exame do Estado Mental</h3>
+                        {mmseResult && (
+                          <span className="px-2 py-0.5 text-xs bg-green-100 text-green-800 dark:bg-green-900/30 dark:text-green-400 rounded-full">
+                            Concluido: {mmseResult.totalScore}/30
+                          </span>
+                        )}
+                      </div>
+                      <p className="text-sm text-gray-600 dark:text-gray-400 mt-1">
+                        Avalia orientacao, memoria, atencao, calculo, linguagem e praxia.
+                        Duracao aproximada: 10-15 minutos.
+                      </p>
+                      <p className="text-xs text-gray-500 dark:text-gray-500 mt-1">
+                        19 questoes | Pontuacao maxima: 30 pontos
+                      </p>
+                    </div>
+                  </label>
+
+                  {/* MoCA */}
+                  <label className={`flex items-start gap-4 p-4 border-2 rounded-lg cursor-pointer transition-colors ${
+                    selectedTests.moca
+                      ? 'border-primary-600 bg-primary-50 dark:bg-primary-900/30'
+                      : 'border-gray-200 dark:border-gray-700 hover:border-primary-300'
+                  }`}>
+                    <input
+                      type="checkbox"
+                      checked={selectedTests.moca}
+                      onChange={() => setSelectedTests(prev => ({ ...prev, moca: !prev.moca }))}
+                      className="mt-1 h-5 w-5 text-primary-600 rounded focus:ring-2 focus:ring-primary-500"
+                    />
+                    <div className="flex-1">
+                      <div className="flex items-center gap-2">
+                        <h3 className="font-semibold text-gray-900 dark:text-gray-100">MoCA - Montreal Cognitive Assessment</h3>
+                        {mocaResult && (
+                          <span className="px-2 py-0.5 text-xs bg-green-100 text-green-800 dark:bg-green-900/30 dark:text-green-400 rounded-full">
+                            Concluido: {mocaResult.adjustedScore ?? mocaResult.totalScore}/30
+                          </span>
+                        )}
+                      </div>
+                      <p className="text-sm text-gray-600 dark:text-gray-400 mt-1">
+                        Mais sensivel que o MMSE para detectar comprometimento cognitivo leve (CCL).
+                        Avalia funcoes executivas, visuoespaciais, linguagem, memoria e orientacao.
+                      </p>
+                      <p className="text-xs text-gray-500 dark:text-gray-500 mt-1">
+                        25 questoes | Pontuacao maxima: 30 pontos | Ajuste por escolaridade
+                      </p>
+                    </div>
+                  </label>
+
+                  {/* Clock Drawing */}
+                  <label className={`flex items-start gap-4 p-4 border-2 rounded-lg cursor-pointer transition-colors ${
+                    selectedTests.clockDrawing
+                      ? 'border-primary-600 bg-primary-50 dark:bg-primary-900/30'
+                      : 'border-gray-200 dark:border-gray-700 hover:border-primary-300'
+                  }`}>
+                    <input
+                      type="checkbox"
+                      checked={selectedTests.clockDrawing}
+                      onChange={() => setSelectedTests(prev => ({ ...prev, clockDrawing: !prev.clockDrawing }))}
+                      className="mt-1 h-5 w-5 text-primary-600 rounded focus:ring-2 focus:ring-primary-500"
+                    />
+                    <div className="flex-1">
+                      <div className="flex items-center gap-2">
+                        <h3 className="font-semibold text-gray-900 dark:text-gray-100">Teste do Relogio (Clock Drawing Test)</h3>
+                        {clockResult && (
+                          <span className="px-2 py-0.5 text-xs bg-green-100 text-green-800 dark:bg-green-900/30 dark:text-green-400 rounded-full">
+                            Concluido: {clockResult.score}/5
+                          </span>
+                        )}
+                      </div>
+                      <p className="text-sm text-gray-600 dark:text-gray-400 mt-1">
+                        Avalia funcoes executivas, habilidades visuoespaciais e atencao.
+                        Sensivel para demencias frontais e Alzheimer em estagios iniciais.
+                      </p>
+                      <p className="text-xs text-gray-500 dark:text-gray-500 mt-1">
+                        5 criterios | Pontuacao maxima: 5 pontos | Inclui desenho digital
+                      </p>
+                    </div>
+                  </label>
+                </div>
+
+                {/* Selected tests summary */}
+                <div className="mt-6 p-4 bg-gray-50 dark:bg-gray-800 rounded-lg">
+                  <h4 className="font-medium text-gray-900 dark:text-gray-100 mb-2">Testes selecionados:</h4>
+                  {!selectedTests.mmse && !selectedTests.moca && !selectedTests.clockDrawing ? (
+                    <p className="text-sm text-gray-500 dark:text-gray-400">Nenhum teste selecionado</p>
+                  ) : (
+                    <ul className="text-sm text-gray-700 dark:text-gray-300 space-y-1">
+                      {selectedTests.mmse && <li>1. MMSE - Mini Exame do Estado Mental</li>}
+                      {selectedTests.moca && <li>{selectedTests.mmse ? '2' : '1'}. MoCA - Montreal Cognitive Assessment</li>}
+                      {selectedTests.clockDrawing && (
+                        <li>
+                          {selectedTests.mmse && selectedTests.moca ? '3' : selectedTests.mmse || selectedTests.moca ? '2' : '1'}. Teste do Relogio
+                        </li>
+                      )}
+                    </ul>
+                  )}
+                </div>
+              </CardContent>
+            </Card>
+
+            <div className="flex justify-between">
+              <Button
+                onClick={() => setStep('basic-info')}
+                className="bg-gray-200 text-gray-700 hover:bg-gray-300 dark:bg-gray-700 dark:text-gray-300 dark:hover:bg-gray-600"
+              >
+                Voltar
+              </Button>
+              <Button onClick={handleTestSelectionNext}>
+                Iniciar Testes
+              </Button>
+            </div>
+          </div>
+        )}
+
+        {/* Step 3a: MMSE Test */}
         {step === 'mmse-test' && (
           <MMSETest
             onComplete={handleMMSEComplete}
-            onCancel={handleMMSECancel}
+            onCancel={handleTestCancel}
           />
         )}
 
-        {/* Step 3: Review */}
+        {/* Step 3b: MoCA Test */}
+        {step === 'moca-test' && (
+          <MoCATest
+            onComplete={handleMoCAComplete}
+            onCancel={handleTestCancel}
+          />
+        )}
+
+        {/* Step 3c: Clock Drawing Test */}
+        {step === 'clock-test' && (
+          <ClockDrawingTest
+            onComplete={handleClockComplete}
+            onCancel={handleTestCancel}
+          />
+        )}
+
+        {/* Step 4: Review */}
         {step === 'review' && (
           <div className="space-y-6">
             <Card>
-              <CardHeader title="Revisão da Avaliação" />
+              <CardHeader title="Revisao da Avaliacao" />
               <CardContent>
                 <div className="space-y-6">
                   {/* Patient Info */}
                   <div>
-                    <h3 className="text-lg font-semibold text-gray-900 mb-2">Paciente</h3>
-                    <p className="text-gray-700">{selectedPatient?.nome}</p>
+                    <h3 className="text-lg font-semibold text-gray-900 dark:text-gray-100 mb-2">Paciente</h3>
+                    <p className="text-gray-700 dark:text-gray-300">{selectedPatient?.nome}</p>
+                    <p className="text-sm text-gray-500 dark:text-gray-400">{selectedPatient?.idade} anos</p>
                   </div>
 
                   {/* Basic Info */}
-                  <div className="border-t pt-4">
-                    <h3 className="text-lg font-semibold text-gray-900 mb-2">Informações da Avaliação</h3>
+                  <div className="border-t dark:border-gray-700 pt-4">
+                    <h3 className="text-lg font-semibold text-gray-900 dark:text-gray-100 mb-2">Informacoes da Avaliacao</h3>
                     <dl className="grid grid-cols-1 md:grid-cols-2 gap-4">
                       <div>
-                        <dt className="text-sm font-medium text-gray-600">Data:</dt>
-                        <dd className="text-gray-900">{new Date(basicInfo.dataAvaliacao).toLocaleDateString('pt-BR')}</dd>
+                        <dt className="text-sm font-medium text-gray-600 dark:text-gray-400">Data:</dt>
+                        <dd className="text-gray-900 dark:text-gray-100">{new Date(basicInfo.dataAvaliacao).toLocaleDateString('pt-BR')}</dd>
                       </div>
                       <div>
-                        <dt className="text-sm font-medium text-gray-600">Queixa Principal:</dt>
-                        <dd className="text-gray-900">{basicInfo.queixaPrincipal}</dd>
+                        <dt className="text-sm font-medium text-gray-600 dark:text-gray-400">Queixa Principal:</dt>
+                        <dd className="text-gray-900 dark:text-gray-100">{basicInfo.queixaPrincipal}</dd>
                       </div>
                       {basicInfo.hipoteseDiagnostica && (
                         <div>
-                          <dt className="text-sm font-medium text-gray-600">Hipótese Diagnóstica:</dt>
-                          <dd className="text-gray-900">{basicInfo.hipoteseDiagnostica}</dd>
+                          <dt className="text-sm font-medium text-gray-600 dark:text-gray-400">Hipotese Diagnostica:</dt>
+                          <dd className="text-gray-900 dark:text-gray-100">{basicInfo.hipoteseDiagnostica}</dd>
                         </div>
                       )}
                       {basicInfo.cid10 && (
                         <div>
-                          <dt className="text-sm font-medium text-gray-600">CID-10:</dt>
-                          <dd className="text-gray-900">{basicInfo.cid10}</dd>
+                          <dt className="text-sm font-medium text-gray-600 dark:text-gray-400">CID-10:</dt>
+                          <dd className="text-gray-900 dark:text-gray-100">{basicInfo.cid10}</dd>
                         </div>
                       )}
                     </dl>
                   </div>
 
-                  {/* MMSE Result */}
-                  {mmseResult && (
-                    <div className="border-t pt-4">
-                      <h3 className="text-lg font-semibold text-gray-900 mb-2">Resultado MMSE</h3>
-                      <div className="bg-primary-50 p-4 rounded-lg">
-                        <div className="flex items-center justify-between">
-                          <div>
-                            <p className="text-3xl font-bold text-primary-600">
-                              {mmseResult.totalScore}/30
-                            </p>
-                            <p className="text-sm text-gray-700 mt-1">
-                              {mmseResult.interpretation}
-                            </p>
-                          </div>
+                  {/* Test Results */}
+                  <div className="border-t dark:border-gray-700 pt-4">
+                    <h3 className="text-lg font-semibold text-gray-900 dark:text-gray-100 mb-4">Resultados dos Testes</h3>
+
+                    <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+                      {/* MMSE Result */}
+                      {mmseResult && (
+                        <div className="p-4 bg-primary-50 dark:bg-primary-900/30 rounded-lg">
+                          <h4 className="font-medium text-gray-900 dark:text-gray-100 mb-2">MMSE</h4>
+                          <p className="text-3xl font-bold text-primary-600 dark:text-primary-400">
+                            {mmseResult.totalScore}/30
+                          </p>
+                          <p className="text-sm text-gray-600 dark:text-gray-400 mt-1">
+                            {mmseResult.interpretation}
+                          </p>
                           <button
                             onClick={() => setStep('mmse-test')}
-                            className="text-sm text-primary-600 hover:text-primary-700 underline"
+                            className="text-xs text-primary-600 dark:text-primary-400 hover:underline mt-2"
                           >
-                            Ver detalhes
+                            Refazer teste
                           </button>
                         </div>
+                      )}
+
+                      {/* MoCA Result */}
+                      {mocaResult && (
+                        <div className="p-4 bg-primary-50 dark:bg-primary-900/30 rounded-lg">
+                          <h4 className="font-medium text-gray-900 dark:text-gray-100 mb-2">MoCA</h4>
+                          <p className="text-3xl font-bold text-primary-600 dark:text-primary-400">
+                            {mocaResult.adjustedScore ?? mocaResult.totalScore}/30
+                          </p>
+                          {mocaResult.educationAdjusted && (
+                            <p className="text-xs text-gray-500 dark:text-gray-500">
+                              (Original: {mocaResult.totalScore} + 1 por escolaridade)
+                            </p>
+                          )}
+                          <p className="text-sm text-gray-600 dark:text-gray-400 mt-1">
+                            {mocaResult.interpretation}
+                          </p>
+                          <button
+                            onClick={() => setStep('moca-test')}
+                            className="text-xs text-primary-600 dark:text-primary-400 hover:underline mt-2"
+                          >
+                            Refazer teste
+                          </button>
+                        </div>
+                      )}
+
+                      {/* Clock Result */}
+                      {clockResult && (
+                        <div className="p-4 bg-primary-50 dark:bg-primary-900/30 rounded-lg">
+                          <h4 className="font-medium text-gray-900 dark:text-gray-100 mb-2">Teste do Relogio</h4>
+                          <p className="text-3xl font-bold text-primary-600 dark:text-primary-400">
+                            {clockResult.score}/5
+                          </p>
+                          <p className="text-sm text-gray-600 dark:text-gray-400 mt-1">
+                            {clockResult.interpretation}
+                          </p>
+                          <button
+                            onClick={() => setStep('clock-test')}
+                            className="text-xs text-primary-600 dark:text-primary-400 hover:underline mt-2"
+                          >
+                            Refazer teste
+                          </button>
+                        </div>
+                      )}
+                    </div>
+
+                    {!mmseResult && !mocaResult && !clockResult && (
+                      <p className="text-gray-500 dark:text-gray-400">Nenhum teste foi aplicado.</p>
+                    )}
+                  </div>
+
+                  {/* Clock Drawing Image */}
+                  {clockResult?.drawingData && (
+                    <div className="border-t dark:border-gray-700 pt-4">
+                      <h3 className="text-lg font-semibold text-gray-900 dark:text-gray-100 mb-2">Desenho do Relogio</h3>
+                      <div className="border dark:border-gray-700 rounded-lg overflow-hidden bg-white max-w-md">
+                        <img
+                          src={clockResult.drawingData}
+                          alt="Desenho do relogio"
+                          className="w-full"
+                        />
                       </div>
                     </div>
                   )}
@@ -486,13 +770,13 @@ export function EvaluationCreatePage() {
 
             <div className="flex justify-between">
               <Button
-                onClick={() => setStep('basic-info')}
-                className="bg-gray-200 text-gray-700 hover:bg-gray-300"
+                onClick={() => setStep('test-selection')}
+                className="bg-gray-200 text-gray-700 hover:bg-gray-300 dark:bg-gray-700 dark:text-gray-300 dark:hover:bg-gray-600"
               >
-                ← Voltar
+                Voltar para Testes
               </Button>
               <Button onClick={handleSave} disabled={saving}>
-                {saving ? 'Salvando...' : 'Salvar Avaliação'}
+                {saving ? 'Salvando...' : 'Salvar Avaliacao'}
               </Button>
             </div>
           </div>

@@ -1,13 +1,13 @@
 import { useState, useEffect, useCallback, useRef } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { Layout } from '@/components/layout';
-import { Card, CardHeader, CardContent, Button, Input } from '@/components/ui';
-import { getEvaluationsProvider } from '@/services/providers/factory/provider-factory';
-import type { IEvaluationsProvider } from '@/services/providers/types';
-import type { Evaluation, Patient } from '@neurocare/shared-types';
+import { Card, CardHeader, CardContent, Button, Input, ConfirmModal, AlertModal } from '@/components/ui';
+import { getEvaluationsProvider, getPatientsProvider } from '@/services/providers/factory/provider-factory';
+import type { IEvaluationsProvider, ProviderPatient } from '@/services/providers/types';
+import type { Evaluation } from '@/types';
 
 interface EvaluationWithPatient extends Evaluation {
-  patient?: Patient;
+  patient?: ProviderPatient;
 }
 
 export function EvaluationsPage() {
@@ -15,9 +15,17 @@ export function EvaluationsPage() {
   const [evaluations, setEvaluations] = useState<EvaluationWithPatient[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
-  const [filterStatus, setFilterStatus] = useState<string>('all');
+  const [_filterStatus, _setFilterStatus] = useState<string>('all');
   const [searchQuery, setSearchQuery] = useState('');
   const [deleting, setDeleting] = useState<string | null>(null);
+  const [deleteModal, setDeleteModal] = useState<{ isOpen: boolean; evaluationId: string | null }>({
+    isOpen: false,
+    evaluationId: null,
+  });
+  const [alertModal, setAlertModal] = useState<{ isOpen: boolean; message: string }>({
+    isOpen: false,
+    message: '',
+  });
   const providerRef = useRef<IEvaluationsProvider | null>(null);
 
   const loadEvaluations = useCallback(async () => {
@@ -30,7 +38,21 @@ export function EvaluationsPage() {
       }
 
       const data = await providerRef.current.getAll();
-      setEvaluations(data);
+
+      // Load patient data for each evaluation
+      const patientsProvider = await getPatientsProvider();
+      const evaluationsWithPatients = await Promise.all(
+        data.map(async (evaluation) => {
+          try {
+            const patient = await patientsProvider.getById(evaluation.patientId);
+            return { ...evaluation, patient };
+          } catch {
+            return evaluation;
+          }
+        })
+      );
+
+      setEvaluations(evaluationsWithPatients);
     } catch (err: unknown) {
       console.error('Erro ao carregar avaliações:', err);
       setError('Erro ao carregar avaliações. Tente novamente.');
@@ -43,13 +65,17 @@ export function EvaluationsPage() {
     loadEvaluations();
   }, [loadEvaluations]);
 
-  const handleDelete = async (id: string) => {
-    if (!confirm('Tem certeza que deseja excluir esta avaliação?')) {
-      return;
-    }
+  const handleDeleteClick = (id: string) => {
+    setDeleteModal({ isOpen: true, evaluationId: id });
+  };
+
+  const handleDeleteConfirm = async () => {
+    const id = deleteModal.evaluationId;
+    if (!id) return;
 
     try {
       setDeleting(id);
+      setDeleteModal({ isOpen: false, evaluationId: null });
 
       if (!providerRef.current) {
         providerRef.current = await getEvaluationsProvider();
@@ -59,7 +85,7 @@ export function EvaluationsPage() {
       await loadEvaluations();
     } catch (err: unknown) {
       console.error('Erro ao excluir avaliação:', err);
-      alert('Erro ao excluir avaliação. Tente novamente.');
+      setAlertModal({ isOpen: true, message: 'Erro ao excluir avaliação. Tente novamente.' });
     } finally {
       setDeleting(null);
     }
@@ -70,26 +96,12 @@ export function EvaluationsPage() {
     return date.toLocaleDateString('pt-BR');
   };
 
-  const getStatusBadge = (status: string) => {
-    const statusMap: Record<string, { label: string; className: string }> = {
-      IN_PROGRESS: { label: 'Em Andamento', className: 'bg-blue-100 text-blue-800' },
-      COMPLETED: { label: 'Concluída', className: 'bg-green-100 text-green-800' },
-      CANCELLED: { label: 'Cancelada', className: 'bg-red-100 text-red-800' },
-    };
-    const config = statusMap[status] || { label: status, className: 'bg-gray-100 text-gray-800' };
-    return (
-      <span className={`px-2 py-1 text-xs font-medium rounded-full ${config.className}`}>
-        {config.label}
-      </span>
-    );
+  const formatHipotese = (hipoteses?: { diagnostico: string; probabilidade: number }[]): string => {
+    if (!hipoteses || hipoteses.length === 0) return '-';
+    return hipoteses.map(h => h.diagnostico).join(', ');
   };
 
   const filteredEvaluations = evaluations.filter((evaluation) => {
-    // Filtro por status
-    if (filterStatus !== 'all' && evaluation.status !== filterStatus) {
-      return false;
-    }
-
     // Filtro por busca
     if (searchQuery) {
       const query = searchQuery.toLowerCase();
@@ -129,39 +141,6 @@ export function EvaluationsPage() {
 
         {/* Filtros */}
         <div className="flex gap-4">
-          <div className="flex gap-2">
-            <button
-              onClick={() => setFilterStatus('all')}
-              className={`px-4 py-2 rounded-lg text-sm font-medium ${
-                filterStatus === 'all'
-                  ? 'bg-primary-600 text-white'
-                  : 'bg-gray-100 text-gray-700 hover:bg-gray-200'
-              }`}
-            >
-              Todas
-            </button>
-            <button
-              onClick={() => setFilterStatus('IN_PROGRESS')}
-              className={`px-4 py-2 rounded-lg text-sm font-medium ${
-                filterStatus === 'IN_PROGRESS'
-                  ? 'bg-primary-600 text-white'
-                  : 'bg-gray-100 text-gray-700 hover:bg-gray-200'
-              }`}
-            >
-              Em Andamento
-            </button>
-            <button
-              onClick={() => setFilterStatus('COMPLETED')}
-              className={`px-4 py-2 rounded-lg text-sm font-medium ${
-                filterStatus === 'COMPLETED'
-                  ? 'bg-primary-600 text-white'
-                  : 'bg-gray-100 text-gray-700 hover:bg-gray-200'
-              }`}
-            >
-              Concluídas
-            </button>
-          </div>
-
           <Input
             type="search"
             placeholder="Buscar por paciente ou queixa..."
@@ -185,7 +164,7 @@ export function EvaluationsPage() {
             ) : filteredEvaluations.length === 0 ? (
               <div className="text-center py-12 text-gray-500">
                 <p className="text-5xl mb-4">📋</p>
-                {searchQuery || filterStatus !== 'all' ? (
+                {searchQuery ? (
                   <>
                     <p className="text-lg font-medium">Nenhuma avaliação encontrada</p>
                     <p className="mt-2">Tente ajustar os filtros</p>
@@ -212,13 +191,13 @@ export function EvaluationsPage() {
                         Queixa Principal
                       </th>
                       <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                        Status
+                        Medico
                       </th>
                       <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                        Hipótese Diagnóstica
+                        Hipotese Diagnostica
                       </th>
                       <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                        Ações
+                        Acoes
                       </th>
                     </tr>
                   </thead>
@@ -232,7 +211,7 @@ export function EvaluationsPage() {
                         </td>
                         <td className="px-6 py-4 whitespace-nowrap">
                           <div className="text-sm text-gray-600">
-                            {formatDate(evaluation.dataAvaliacao)}
+                            {formatDate(evaluation.data)}
                           </div>
                         </td>
                         <td className="px-6 py-4">
@@ -241,22 +220,30 @@ export function EvaluationsPage() {
                           </div>
                         </td>
                         <td className="px-6 py-4 whitespace-nowrap">
-                          {getStatusBadge(evaluation.status)}
+                          <div className="text-sm text-gray-600">
+                            {evaluation.medico || '-'}
+                          </div>
                         </td>
                         <td className="px-6 py-4">
                           <div className="text-sm text-gray-600 max-w-xs truncate">
-                            {evaluation.hipoteseDiagnostica || '-'}
+                            {formatHipotese(evaluation.hipoteseDiagnostica)}
                           </div>
                         </td>
                         <td className="px-6 py-4 whitespace-nowrap text-sm font-medium">
-                          <button className="text-primary-600 hover:text-primary-900 mr-3">
+                          <button
+                            onClick={() => navigate(`/avaliacoes/${evaluation.id}`)}
+                            className="text-primary-600 hover:text-primary-900 mr-3"
+                          >
                             Ver
                           </button>
-                          <button className="text-blue-600 hover:text-blue-900 mr-3">
+                          <button
+                            onClick={() => navigate(`/avaliacoes/${evaluation.id}/editar`)}
+                            className="text-blue-600 hover:text-blue-900 mr-3"
+                          >
                             Editar
                           </button>
                           <button
-                            onClick={() => handleDelete(evaluation.id)}
+                            onClick={() => handleDeleteClick(evaluation.id)}
                             disabled={deleting === evaluation.id}
                             className="text-red-600 hover:text-red-900 disabled:opacity-50"
                           >
@@ -271,6 +258,25 @@ export function EvaluationsPage() {
             )}
           </CardContent>
         </Card>
+
+        <ConfirmModal
+          isOpen={deleteModal.isOpen}
+          onClose={() => setDeleteModal({ isOpen: false, evaluationId: null })}
+          onConfirm={handleDeleteConfirm}
+          title="Excluir Avaliação"
+          message="Tem certeza que deseja excluir esta avaliação? Esta ação não pode ser desfeita."
+          confirmText="Excluir"
+          variant="danger"
+          loading={deleting !== null}
+        />
+
+        <AlertModal
+          isOpen={alertModal.isOpen}
+          onClose={() => setAlertModal({ isOpen: false, message: '' })}
+          title="Erro"
+          message={alertModal.message}
+          variant="error"
+        />
       </div>
     </Layout>
   );

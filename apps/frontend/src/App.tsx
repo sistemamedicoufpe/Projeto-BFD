@@ -13,6 +13,7 @@ import { PatientEditPage } from './pages/PatientEditPage'
 import { PatientDetailPage } from './pages/PatientDetailPage'
 import { EvaluationsPage } from './pages/EvaluationsPage'
 import { EvaluationCreatePage } from './pages/EvaluationCreatePage'
+import { EvaluationDetailPage } from './pages/EvaluationDetailPage'
 import { ReportsPage } from './pages/ReportsPage'
 import { ReportCreatePage } from './pages/ReportCreatePage'
 import { SettingsPage } from './pages/SettingsPage'
@@ -82,6 +83,22 @@ function App() {
           />
           <Route
             path="/avaliacoes/nova"
+            element={
+              <ProtectedRoute>
+                <EvaluationCreatePage />
+              </ProtectedRoute>
+            }
+          />
+          <Route
+            path="/avaliacoes/:id"
+            element={
+              <ProtectedRoute>
+                <EvaluationDetailPage />
+              </ProtectedRoute>
+            }
+          />
+          <Route
+            path="/avaliacoes/:id/editar"
             element={
               <ProtectedRoute>
                 <EvaluationCreatePage />
