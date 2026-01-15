@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react'
+import { useState } from 'react'
 import { Card, CardHeader, CardContent, Button } from '@/components/ui'
 import { useLocalAI } from '@/hooks/useLocalAI'
 import { useSettings } from '@/contexts/SettingsContext'

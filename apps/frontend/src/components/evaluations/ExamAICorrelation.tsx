@@ -41,10 +41,10 @@ export function ExamAICorrelation({ exam, relatedEvaluations }: ExamAICorrelatio
             correlationText = `**Correlação Clínico-Radiológica:**\n\n`
             correlationText += `O exame de imagem demonstra alterações estruturais (atrofia/redução volumétrica) que são consistentes com os achados nos testes cognitivos:\n\n`
 
-            evaluationsWithTests.forEach(eval => {
-              const date = new Date(eval.data || eval.createdAt?.toString() || '').toLocaleDateString('pt-BR')
-              if (eval.mmseResult) {
-                const score = eval.mmseResult.totalScore
+            evaluationsWithTests.forEach(evaluation => {
+              const date = new Date(evaluation.data || evaluation.createdAt?.toString() || '').toLocaleDateString('pt-BR')
+              if (evaluation.mmseResult) {
+                const score = evaluation.mmseResult.totalScore
                 if (score < 24) {
                   correlationText += `• **${date}**: MMSE ${score}/30 (comprometimento cognitivo) correlaciona com achados de neuroimagem sugestivos de processo neurodegenerativo.\n`
                 }
