@@ -62,8 +62,8 @@ export function Layout({ children }: LayoutProps) {
       {/* Main content com margem adaptativa */}
       <main
         className={`transition-all duration-300 ${
-          isOpen && !isMobile ? 'ml-64' : 'ml-0'
-        } ${isMobile ? 'pt-16' : ''}`}
+          isMobile ? 'ml-0 pt-16' : isOpen ? 'ml-64' : 'ml-16'
+        }`}
       >
         <div className="p-4 sm:p-6 md:p-8">{children}</div>
       </main>
