@@ -61,11 +61,13 @@ export function LoginPage() {
   }
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-primary-50 to-secondary-50 dark:from-gray-900 dark:to-gray-800 flex items-center justify-center p-4">
+    <div
+      className="min-h-screen flex items-center justify-center p-4"
+      style={{ background: 'linear-gradient(to bottom, #193B59, #3B7D8C, #5EBFBF)' }}
+    >
       <Card className="w-full max-w-md">
         <div className="text-center mb-6">
-          <Logo className="mb-4" />
-          <h1 className="text-2xl font-bold text-gray-900 dark:text-gray-100">NeuroDiagnóstico</h1>
+          <Logo className="mb-2" size="xl" />
           <p className="text-gray-600 dark:text-gray-400 mt-2">Sistema de Avaliação Neurológica</p>
         </div>
 
@@ -107,6 +109,7 @@ export function LoginPage() {
             className="w-full"
             loading={loading}
             disabled={loading}
+            variant='blue'
           >
             Entrar
           </Button>
@@ -115,7 +118,10 @@ export function LoginPage() {
         <div className="mt-6 text-center">
           <p className="text-sm text-gray-600 dark:text-gray-400">
             Não tem uma conta?{' '}
-            <Link to="/registro" className="text-primary-600 dark:text-primary-400 hover:text-primary-700 dark:hover:text-primary-300 font-medium">
+            <Link
+              to="/registro"
+              className="text-[#3B7D8C] dark:text-[#3B7D8C] hover:text-[#2f6a73] dark:hover:text-[#2f6a73] font-medium"
+            >
               Registre-se aqui
             </Link>
           </p>
