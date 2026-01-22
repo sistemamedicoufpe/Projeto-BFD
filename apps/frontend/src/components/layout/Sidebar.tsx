@@ -84,10 +84,10 @@ export function Sidebar() {
       {/* Header */}
       <div className="h-16 flex items-center justify-between px-3 border-b border-gray-200 dark:border-gray-700">
         <div className={`flex items-center gap-2 ${!isOpen && !isMobile ? 'justify-center w-full' : ''}`}>
-          <Logo size="sm" />
-          {(isOpen || isMobile) && (
-            <span className="font-bold text-lg text-gray-900 dark:text-gray-100 whitespace-nowrap">NeuroDiag</span>
-          )}
+          <Logo size="sm" src="neurocare-logo.png" />
+            {(isOpen || isMobile) && (
+              <span className="font-bold text-lg text-[#3B7D8C] dark:text-[#3B7D8C] whitespace-nowrap">Neurocare</span>
+            )}
         </div>
         {(isOpen || isMobile) && (
           <button
