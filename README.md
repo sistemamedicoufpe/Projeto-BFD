@@ -25,7 +25,7 @@ Sistema completo de diagnóstico neurológico para avaliação de demências, co
 
 #### 1.1 Registro de Novo Usuário
 
-1. Acesse a aplicação pelo navegador
+1. Acesse a aplicação pelo navegador:https://github.com/sistemamedicoufpe/Projeto-BFD.git
 2. Na tela de login, clique em **"Registre-se aqui"**
 3. Preencha o formulário:
    - **Nome completo**: Seu nome profissional
